@@ -110,17 +110,13 @@ func (this *Parameter) MinSize() fyne.Size {
 		if this.minEntry.MinSize().Width > maxXExt {
 			maxXExt = this.minEntry.MinSize().Width
 		}
-		if this.minEntry.MinSize().Height > maxYExt {
-			maxYExt = this.minEntry.MinSize().Height
-		}
+		maxYExt += this.minEntry.MinSize().Height
 	}
 	if this.maxEntry != nil {
 		if this.maxEntry.MinSize().Width > maxXExt {
 			maxXExt = this.maxEntry.MinSize().Width
 		}
-		if this.maxEntry.MinSize().Height > maxYExt {
-			maxYExt = this.maxEntry.MinSize().Height
-		}
+		maxYExt += this.maxEntry.MinSize().Height
 	}
 	var maxXlock float32 = 0
 	var maxYlock float32 = 0
@@ -133,7 +129,8 @@ func (this *Parameter) MinSize() fyne.Size {
 		this.valEntry.MinSize().Width+
 			maxXlock+
 			maxXExt)
-	altMinY := this.name.MinSize().Height +
+	lblMin := this.name.MinSize().Height
+	altMinY := lblMin +
 		max(this.valEntry.MinSize().Height,
 			maxYlock,
 			maxYExt)
@@ -212,6 +209,35 @@ func (this *Parameter) IsFixed() option.Option[bool] {
 }
 
 func (this *Parameter) CreateRenderer() fyne.WidgetRenderer {
+	return NewParameterRenderer(this)
+}
+
+type ParameterRenderer struct {
+	layout    fyne.WidgetRenderer
+	parameter *Parameter
+}
+
+func (p ParameterRenderer) Destroy() {
+	p.layout.Destroy()
+}
+
+func (p ParameterRenderer) Layout(size fyne.Size) {
+	p.layout.Layout(size)
+}
+
+func (p ParameterRenderer) MinSize() fyne.Size {
+	return p.parameter.MinSize()
+}
+
+func (p ParameterRenderer) Objects() []fyne.CanvasObject {
+	return p.layout.Objects()
+}
+
+func (p ParameterRenderer) Refresh() {
+	p.layout.Refresh()
+}
+
+func NewParameterRenderer(parameter *Parameter) *ParameterRenderer {
 	parsable := func(s string) error {
 		if s == "" {
 			return nil
@@ -219,33 +245,39 @@ func (this *Parameter) CreateRenderer() fyne.WidgetRenderer {
 		_, err := strconv.ParseFloat(s, 64)
 		return err
 	}
-	this.valEntry.MultiLine = false
-	this.valEntry.Validator = parsable
-	this.valEntry.PlaceHolder = fmt.Sprintf("%f", this.defaultValue)
-	this.valEntry.Scroll = container.ScrollNone
-	this.valEntry.Refresh()
-	if this.maxEntry != nil {
-		this.maxEntry.MultiLine = false
-		this.maxEntry.Validator = parsable
-		this.maxEntry.PlaceHolder = "Max"
-		this.maxEntry.Scroll = container.ScrollNone
-		this.maxEntry.Refresh()
+	parameter.valEntry.MultiLine = false
+	parameter.valEntry.Validator = parsable
+	parameter.valEntry.PlaceHolder = fmt.Sprintf("%f", parameter.defaultValue)
+	parameter.valEntry.Scroll = container.ScrollNone
+	parameter.valEntry.Refresh()
+	if parameter.maxEntry != nil {
+		parameter.maxEntry.MultiLine = false
+		parameter.maxEntry.Validator = parsable
+		parameter.maxEntry.PlaceHolder = "Max"
+		parameter.maxEntry.Scroll = container.ScrollNone
+		parameter.maxEntry.Refresh()
 	}
-	if this.minEntry != nil {
-		this.minEntry.MultiLine = false
-		this.minEntry.Validator = parsable
-		this.minEntry.PlaceHolder = "Min"
-		this.minEntry.Scroll = container.ScrollNone
-		this.minEntry.Refresh()
+	if parameter.minEntry != nil {
+		parameter.minEntry.MultiLine = false
+		parameter.minEntry.Validator = parsable
+		parameter.minEntry.PlaceHolder = "Min"
+		parameter.minEntry.Scroll = container.ScrollNone
+		parameter.minEntry.Refresh()
 	}
 	var lockedPnl = container.NewStack()
-	if this.locked != nil {
-		lockedPnl.Add(this.locked)
+	if parameter.locked != nil {
+		lockedPnl.Add(parameter.locked)
 	}
-	if this.maxEntry != nil && this.minEntry != nil {
-		return widget.NewSimpleRenderer(container.NewVBox(this.name, container.NewHBox(lockedPnl, this.valEntry, container.NewVBox(this.maxEntry, this.minEntry))))
+	var layout fyne.WidgetRenderer = nil
+	if parameter.maxEntry != nil && parameter.minEntry != nil {
+		layout = widget.NewSimpleRenderer(container.NewVBox(parameter.name, container.NewHBox(container.NewCenter(lockedPnl), container.NewCenter(parameter.valEntry), container.NewVBox(parameter.maxEntry, parameter.minEntry))))
+	} else {
+		layout = widget.NewSimpleRenderer(container.NewVBox(parameter.name, container.NewHBox(container.NewCenter(lockedPnl), container.NewCenter(parameter.valEntry))))
 	}
-	return widget.NewSimpleRenderer(container.NewVBox(this.name, container.NewHBox(lockedPnl, this.valEntry)))
+	return &ParameterRenderer{
+		layout:    layout,
+		parameter: parameter,
+	}
 }
 
 type Profile struct {
@@ -528,6 +560,7 @@ func NewProfilePanelRenderer(obj *ProfilePanel) *ProfilePanelRenderer {
 
 type SldSettings struct {
 	Profile
+	renderer *SldSettingsRenderer
 }
 
 func NewSldDefaultSettings(name string) *SldSettings {
@@ -542,32 +575,86 @@ func NewSldDefaultSettings(name string) *SldSettings {
 	scaleP.minEntry = nil
 	scaleP.maxEntry = nil
 	scaleP.locked = nil
+	scaleP.minSize = fyne.NewSize(0, 0)
 
 	backgroundP.minEntry = nil
 	backgroundP.maxEntry = nil
 	backgroundP.locked = nil
+	backgroundP.minSize = fyne.NewSize(0, 0)
 
 	deltaP.minEntry = nil
 	deltaP.maxEntry = nil
 	deltaP.locked = nil
+	deltaP.minSize = fyne.NewSize(0, 0)
 
 	this.Profile.parameter[SldDefaultScaleID] = scaleP
 	this.Profile.parameter[SldDefaultBackgroundID] = backgroundP
 	this.Profile.parameter[SldDefaultDeltaQzID] = deltaP
 
+	this.ExtendBaseWidget(this)
 	return this
 }
-
 func (this *SldSettings) CreateRenderer() fyne.WidgetRenderer {
+	renderer := NewSldSettingsRenderer(this)
+	this.renderer = renderer
+	return renderer
+}
+func (this *SldSettings) Resize(size fyne.Size) {
+	if this.renderer != nil {
+		this.renderer.Layout(size)
+	}
+}
+func (this *SldSettings) MinSize() fyne.Size {
+	var paramX float32 = 0
+	var paramY float32 = 10
+	for _, parameter := range this.parameter {
+		if this.parameter != nil {
+			paramX += parameter.MinSize().Width
+			if paramY < parameter.MinSize().Height {
+				paramY = parameter.MinSize().Height
+			}
+		}
+	}
+	return fyne.NewSize(max(paramX, this.name.MinSize().Width), paramY+this.name.MinSize().Height)
+}
+
+type SldSettingsRenderer struct {
+	layout fyne.WidgetRenderer
+	obj    *SldSettings
+}
+
+func (s SldSettingsRenderer) Destroy() {
+	s.layout.Destroy()
+}
+
+func (s SldSettingsRenderer) Layout(size fyne.Size) {
+	s.layout.Layout(size)
+}
+
+func (s SldSettingsRenderer) MinSize() fyne.Size {
+	return s.obj.MinSize()
+}
+
+func (s SldSettingsRenderer) Objects() []fyne.CanvasObject {
+	return s.layout.Objects()
+}
+
+func (s SldSettingsRenderer) Refresh() {
+	s.layout.Refresh()
+}
+
+func NewSldSettingsRenderer(sldObj *SldSettings) *SldSettingsRenderer {
 	var obj []fyne.CanvasObject
-	for v := range maps.Values(this.Profile.parameter) {
+	for v := range maps.Values(sldObj.Profile.parameter) {
 		if v != nil {
 			obj = append(obj, v)
 		}
 	}
-	var cnt = container.NewBorder(nil, nil, nil, nil, this.name)
-	if this.removeBtn != nil {
-		cnt = container.NewBorder(nil, nil, nil, this.removeBtn, this.name)
+
+	vScroll := container.NewVBox(sldObj.name, container.NewHScroll(container.NewHBox(obj...)))
+	vScroll.Resize(sldObj.MinSize())
+	return &SldSettingsRenderer{
+		obj:    sldObj,
+		layout: widget.NewSimpleRenderer(vScroll),
 	}
-	return widget.NewSimpleRenderer(container.NewHBox(append([]fyne.CanvasObject{cnt}, obj...)...))
 }
