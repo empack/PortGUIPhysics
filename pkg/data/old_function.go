@@ -225,6 +225,46 @@ func getEden(eden []float64, d []float64, sigma []float64, zNumber int) ([]Point
 
 	return f(eden, d, sigma, zNumber), nil
 }
+
+func getEdensities(eden []float64, d []float64, sigma []float64, zNumber int) ([]Point, error) {
+
+	step_n := len(d) + 1
+	//throw error if the param number does not match the scheme
+	if len(eden) != step_n+1 {
+		return nil, errors.New(fmt.Sprintf("Missmatch in parameter dimensionality edensities %d/thickness %d", len(eden), len(d)))
+	}
+	if len(sigma) != step_n {
+		return nil, errors.New(fmt.Sprintf("Missmatch in parameter dimensionality roughness %d/thickness %d", len(sigma), len(d)))
+	}
+
+	//calculate distances
+	var z = make([]float64, step_n)
+	z[0] = 0.0
+	for i := 1; i < step_n+1; i++ {
+		z[i] = z[i-1] + d[i]
+	}
+
+	edensities := make([]Point, zNumber)
+	zaxis := get_zaxis(d, zNumber)
+
+	for i := 0; i < zNumber; i++ {
+		z_i := zaxis[i]
+		//calculate cumulative edensity at a specific z_i
+		y := 0.0
+		for step := 0; step < step_n; step++ {
+			y += (eden[step+1] - eden[step]) * 0.5 * (1.0 + math.Erf((z_i-z[step])/math.Sqrt2*math.Abs(sigma[step])))
+		}
+		//create points for drawing
+		edensities[i] = Point{
+			X:   z_i,
+			Y:   y,
+			ERR: 0,
+		}
+	}
+
+	return edensities, nil
+}
+
 func get_zaxis(d []float64, zNumber int) []float64 {
 	z0 := -20.0
 	var z1 = d[1]
