@@ -5,8 +5,11 @@ import (
 	"image/color"
 	"io"
 	"math"
+	"math/rand"
 	"path/filepath"
 	"physicsGUI/pkg/data"
+	"strconv"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -98,43 +101,48 @@ func AddMainWindow() {
 		}
 	}
 
-	/*
-		graph1 := NewGraphCanvas(&GraphConfig{
-			Title:    "Logarithmic",
-			IsLog:    true,
-			MinValue: 0.01,
-			Data:     data.NewDataFunction(dataset, data.INTERPOLATION_NONE),
-		})
-	*/
-
-	dummyFunction := data.NewOldSLDFunction(
-		[]float64{0.0, 0.346197, 0.458849, 0.334000},
-		[]float64{14.2657, 10.6906},
-		[]float64{3.39544, 2.15980, 3.90204},
-		150) // from refl_monolayer.pro:780
-	if dummyFunction == nil {
-		dummyFunction = data.NewDataFunction([]data.Point{{
-			X:   0,
-			Y:   0,
-			ERR: 0,
-		}}, data.INTERPOLATION_NONE)
-	}
+	graph1 := NewGraphCanvas(&GraphConfig{
+		Title:    "Logarithmic",
+		IsLog:    true,
+		MinValue: 0.01,
+		Data:     data.NewDataFunction(dataset, data.INTERPOLATION_NONE),
+	})
+	graph2 := NewGraphCanvas(&GraphConfig{
+		Title: "Linear",
+		Data:  data.NewDataFunction(dataset, data.INTERPOLATION_NONE),
+	})
+	graph3 := NewGraphCanvas(&GraphConfig{
+		Title: "50ms Updates (bench)",
+		Data:  data.NewDataFunction(dataset, data.INTERPOLATION_NONE),
+	})
 	sldGraph := NewGraphCanvas(&GraphConfig{
-		Resolution: 100,
-		Title:      "SLD",
-		Data:       dummyFunction,
-	})
-	dummyGraph := NewGraphCanvas(&GraphConfig{
-		Resolution: 100,
-		Title:      "Dummy Graph",
-		Data: data.NewDataFunction([]data.Point{{
-			X:   0,
-			Y:   0,
-			ERR: 0,
-		}}, data.INTERPOLATION_NONE),
+		Title: "SLD",
+		Data:  data.NewDataFunction(dataset, data.INTERPOLATION_NONE),
 	})
 
-	profilePanel := NewProfilePanel(NewSldDefaultSettings("Settings"))
+	profilePanel := NewProfilePanel(NewSldDefaultSettings("Settigns"))
+
+	graphs := container.NewHSplit(
+		graph1,
+		graph2,
+	)
+
+	// "benchnmark"
+	go func(graph *GraphCanvas) {
+		for {
+			newData := []data.Point{}
+			for i := 0; i < 10; i++ {
+				newData = append(newData, data.Point{
+					X:   float64(i),
+					Y:   float64(rand.Intn(150)),
+					ERR: rand.Float64() * 20,
+				})
+			}
+
+			graph.UpdateData(data.NewDataFunction(newData, data.INTERPOLATION_NONE))
+			time.Sleep(50 * time.Millisecond)
+		}
+	}(graph3)
 
 	content := container.NewBorder(
 		topContainer, // top
@@ -147,7 +155,10 @@ func AddMainWindow() {
 				sldGraph,
 				profilePanel,
 			),
-			dummyGraph,
+			container.NewVSplit(
+				graphs,
+				graph3,
+			),
 		),
 	)
 
@@ -155,4 +166,29 @@ func AddMainWindow() {
 	MainWindow.SetContent(content)
 
 	MainWindow.ShowAndRun()
+}
+func DefineButtons() [9]*Profile {
+
+	p0 := NewDefaultProfile("Specific Parameters", data.ParametersName[0], data.Parameters[0], data.ParametersName[4], data.Parameters[4], data.ParametersName[7], data.Parameters[7])
+	p1 := NewDefaultProfile("Specific Parameters", data.ParametersName[1], data.Parameters[1], data.ParametersName[5], data.Parameters[5], data.ParametersName[8], data.Parameters[8])
+	p2 := NewDefaultProfile("Specific Parameters", data.ParametersName[2], data.Parameters[2], data.ParametersName[6], data.Parameters[6], data.ParametersName[9], data.Parameters[9])
+	p3 := NewDefaultProfile("Specific Parameters", data.ParametersName[13], data.Parameters[13], data.ParametersName[14], data.Parameters[14], data.ParametersName[15], data.Parameters[15])
+	p4 := NewDefaultProfile("Specific Parameters", data.ParametersName[16], data.Parameters[16], data.ParametersName[17], data.Parameters[17], data.ParametersName[18], data.Parameters[18])
+	p5 := NewDefaultProfile("Specific Parameters", data.ParametersName[19], data.Parameters[19], data.ParametersName[20], data.Parameters[20], data.ParametersName[21], data.Parameters[21])
+	p6 := NewDefaultProfile("Specific Parameters", data.ParametersName[22], data.Parameters[22], data.ParametersName[23], data.Parameters[23], data.ParametersName[24], data.Parameters[24])
+	p7 := NewDefaultProfile("Specific Parameters", data.ParametersName[3], data.Parameters[3], data.ParametersName[25], data.Parameters[25], data.ParametersName[10], data.Parameters[10])
+	p8 := NewDefaultProfile("Specific Parameters", data.ParametersName[11], data.Parameters[11], data.ParametersName[12], data.Parameters[12], "null", 0)
+	proprofil := [9]*Profile{p0, p1, p2, p3, p4, p5, p6, p7, p8}
+	for i := 0; i < 8; i++ {
+		proprofil[i] = NewDefaultProfile(("Specific Parameters" + strconv.Itoa(i)), data.ParametersName[3*i], data.Parameters[3*i], data.ParametersName[3*i+1], data.Parameters[3*i+1], data.ParametersName[3*i+2], data.Parameters[3*i+2])
+	}
+	proprofil[8] = NewDefaultProfile("Specific Parameters"+"8", data.ParametersName[24], data.Parameters[24], data.ParametersName[25], data.Parameters[25], "Nameless", 1)
+	//proprofil := NewDefaultProfile("Specific Parameters", data.ParametersName[0], data.Parameters[0], data.ParametersName[1], data.Parameters[1], data.ParametersName[2], data.Parameters[2])
+	/*for i := 3; i < len(data.Parameters); i++ {
+		proprofil.AddParameter(NewParameter(data.ParametersName[i], data.Parameters[i]))
+		println(data.ParametersName[i], data.Parameters[i])
+	}
+	print(len(proprofil.parameter))
+	*/
+	return proprofil
 }

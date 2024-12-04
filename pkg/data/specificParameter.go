@@ -62,7 +62,8 @@ func TestBoundary(parameter float64, max float64, min float64) float64 {
 	return parameter
 }
 
-var Parameters [26]float64
+var ParametersName [26]string = [26]string{"Background", "Scaling", "Eden_1", "Eden_2", "Eden_3", "Eden_b", "D_1", "D_2", "D_3", "Sigma_a1", "Sigma_12", "Sigma_23", "Sigma_7b", "Eden_4", "D_4", "Sigma_34", "Eden_5", "D_5", "Sigma_45", "Eden_6", "D_6", "Sigma_56", "Eden_7", "D_7", "Sigma_67", "Deltaqz"}
+var Parameters [26]float64 = [26]float64{Background, Scaling, Eden_1, Eden_2, Eden_3, Eden_b, D_1, D_2, D_3, Sigma_a1, Sigma_12, Sigma_23, Sigma_7b, Eden_4, D_4, Sigma_34, Eden_5, D_5, Sigma_45, Eden_6, D_6, Sigma_56, Eden_7, D_7, Sigma_67, Deltaqz}
 
 //function used to get the Array from the Sourcecode. But do we need it?
 func DefineArray() {
@@ -82,7 +83,7 @@ func DefineArray() {
 		if stages[stage] == i {
 			stage++
 		}
-		println("Stage:", stage, " boundswert:", bounds[i])
+		//println("Stage:", stage, " boundswert:", bounds[i])
 		if Parameters[bounds[i]] < min[stage] {
 			Parameters[bounds[i]] = min[stage]
 		} else {

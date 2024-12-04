@@ -3,14 +3,15 @@ package gui
 import (
 	"errors"
 	"fmt"
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
 	"maps"
 	"physicsGUI/pkg/util/option"
 	"slices"
 	"strconv"
 	"strings"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/widget"
 )
 
 const (
@@ -412,6 +413,11 @@ func NewProfilePanel(sldSettings *SldSettings, profiles ...*Profile) *ProfilePan
 		thicknessName := fmt.Sprintf("Thickness Slab 1")
 		baseProfile := NewDefaultProfile(profileName, roughnessName, defaultRoughness, edensityName, defaultEdensity, thicknessName, defaultThickness)
 		p.AddProfile(baseProfile)
+		//Cedric
+		for i := 0; i < 9; i++ {
+			p.AddProfile(DefineButtons()[i])
+		}
+
 	}
 
 	p.addButton = widget.NewButton("+", func() {
