@@ -12,7 +12,7 @@ var typeAssociationMap = map[string]FileParser{
 }
 
 // Import data from a file
-func Import(data []byte, filename string) error {
+func Import(data []byte, filename string) ([]measurement, error) {
 	// TODO: implement
 
 	fmt.Printf("Importierte Datei: %s, Größe: %d bytes\n", filename, len(data))
@@ -20,14 +20,12 @@ func Import(data []byte, filename string) error {
 	dataType := strings.ToLower(path.Ext(filename))
 	parser, ok := typeAssociationMap[dataType]
 	if !ok {
-		return errors.New(fmt.Sprintf("Can't import %s: No loader for %s files found", filename, dataType))
+		return nil, errors.New(fmt.Sprintf("Can't import %s: No loader for %s files found", filename, dataType))
 	} else {
 		res, err := parser.tryParse(data)
 		if err != nil {
-			return errors.Join(errors.New(fmt.Sprintf("Import failed (%s)", filename)), err)
+			return nil, errors.Join(errors.New(fmt.Sprintf("Import failed (%s)", filename)), err)
 		}
-		//TODO display loaded content
-		fmt.Println(res)
+		return res, nil
 	}
-	return nil
 }

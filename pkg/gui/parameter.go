@@ -22,6 +22,7 @@ const (
 	SldDefaultBackgroundID = iota
 	SldDefaultScaleID      = iota
 	SldDefaultDeltaQzID    = iota
+	SldDefaultZNumberID    = iota
 )
 
 var ProfileReservedIDs = []int{ProfileDefaultEdensityID, ProfileDefaultRoughnessID, ProfileDefaultThicknessID}
@@ -159,8 +160,10 @@ func (this *Parameter) Clear() {
 // - when input could not be parsed error contains the error to display to user
 // - else returns parsed value of valEntry field
 func (this *Parameter) GetValue() (float64, error) {
+	if this == nil {
+		return 0, errors.New("NIL_Pointer_Exception: not allowed to call GetValue on nil Parameter")
+	}
 	if this.valEntry.Text == "" {
-		this.valEntry.SetText(fmt.Sprintf("%f", this.defaultValue))
 		return this.defaultValue, nil
 	}
 	val, err := strconv.ParseFloat(this.valEntry.Text, 64)
@@ -282,10 +285,11 @@ func NewParameterRenderer(parameter *Parameter) *ParameterRenderer {
 
 type Profile struct {
 	widget.BaseWidget
-	name      *widget.Entry
-	removeBtn *widget.Button
-	idStart   int
-	parameter map[int]*Parameter
+	name          *widget.Entry
+	removeBtn     *widget.Button
+	idStart       int
+	Parameter     map[int]*Parameter
+	OnValueChange func()
 }
 
 // NewBlankProfile creates a new Profile with nothing but a name
@@ -294,7 +298,7 @@ func NewBlankProfile(name string) *Profile {
 		name:      widget.NewEntry(),
 		removeBtn: nil,
 		idStart:   0,
-		parameter: map[int]*Parameter{},
+		Parameter: map[int]*Parameter{},
 	}
 	p.name.SetText(name)
 	p.ExtendBaseWidget(p)
@@ -304,18 +308,18 @@ func (this *Profile) SetParameter(id int, parameter *Parameter) {
 	if id > this.idStart {
 		this.idStart = id
 	}
-	this.parameter[id] = parameter
+	this.Parameter[id] = parameter
 }
 func (this *Profile) AddParameter(parameter *Parameter) int {
 	newID := this.idStart + 1
-	this.parameter[newID] = parameter
+	this.Parameter[newID] = parameter
 	this.idStart = newID
 	this.Refresh()
 	return newID
 }
 func (this *Profile) RemoveParameter(id int) {
-	this.parameter[id] = nil
-	keys := maps.Keys(this.parameter)
+	this.Parameter[id] = nil
+	keys := maps.Keys(this.Parameter)
 	this.idStart = slices.Max(slices.Collect(keys))
 
 	this.Refresh()
@@ -326,11 +330,23 @@ func NewDefaultProfile(name string, roughnessName string, defaultRoughness float
 	parameter[ProfileDefaultEdensityID] = NewParameter(edensityName, defaultEdensity)
 	parameter[ProfileDefaultThicknessID] = NewParameter(thicknessName, defaultThickness)
 	profile := &Profile{
-		name:      widget.NewEntry(),
-		removeBtn: widget.NewButton("🗑", func() {}),
-		idStart:   slices.Max(ProfileReservedIDs),
-		parameter: parameter,
+		name:          widget.NewEntry(),
+		removeBtn:     widget.NewButton("🗑", func() {}),
+		idStart:       slices.Max(ProfileReservedIDs),
+		Parameter:     parameter,
+		OnValueChange: func() {},
 	}
+
+	parameter[ProfileDefaultRoughnessID].OnChanged = func() {
+		profile.OnValueChange()
+	}
+	parameter[ProfileDefaultEdensityID].OnChanged = func() {
+		profile.OnValueChange()
+	}
+	parameter[ProfileDefaultThicknessID].OnChanged = func() {
+		profile.OnValueChange()
+	}
+
 	// Default button function clears inputs
 	profile.removeBtn = widget.NewButton("🗑", func() {
 		profile.Clear()
@@ -345,7 +361,7 @@ func (this *Profile) Refresh() {
 
 func (this *Profile) CreateRenderer() fyne.WidgetRenderer {
 	var obj []fyne.CanvasObject
-	for v := range maps.Values(this.parameter) {
+	for v := range maps.Values(this.Parameter) {
 		if v != nil {
 			obj = append(obj, v)
 		}
@@ -359,7 +375,7 @@ func (this *Profile) CreateRenderer() fyne.WidgetRenderer {
 
 // Clear removes calls Parameter.Clear() on all Parameter's and Refreshes afterward
 func (this *Profile) Clear() {
-	for _, parameter := range this.parameter {
+	for _, parameter := range this.Parameter {
 		if parameter != nil {
 			parameter.Clear()
 		}
@@ -369,12 +385,13 @@ func (this *Profile) Clear() {
 
 type ProfilePanel struct {
 	widget.BaseWidget
-	base        *Profile
-	bulk        *Profile
-	Profiles    []*Profile
-	addButton   *widget.Button
-	sldSettings *SldSettings
-	renderer    *ProfilePanelRenderer
+	base           *Profile
+	bulk           *Profile
+	Profiles       []*Profile
+	addButton      *widget.Button
+	sldSettings    *SldSettings
+	renderer       *ProfilePanelRenderer
+	OnValueChanged func()
 }
 
 func (this *ProfilePanel) Resize(size fyne.Size) {
@@ -396,8 +413,9 @@ func NewProfilePanel(sldSettings *SldSettings, profiles ...*Profile) *ProfilePan
 	defaultThickness := 1.0
 
 	base := NewDefaultProfile("Base", "Roughness Base/Slab1", defaultRoughness, "Edensity Base", defaultEdensity, "Thickness Base", defaultThickness)
+	base.Parameter[ProfileDefaultThicknessID] = nil
 	bulk := NewDefaultProfile("Bulk", "Roughness Bulk", 0.0, "Edensity Bulk", defaultEdensity, "Thickness Bulk", defaultThickness)
-	bulk.parameter[ProfileDefaultRoughnessID] = nil
+	bulk.Parameter[ProfileDefaultRoughnessID] = nil
 
 	p := &ProfilePanel{
 		base:        base,
@@ -405,6 +423,17 @@ func NewProfilePanel(sldSettings *SldSettings, profiles ...*Profile) *ProfilePan
 		Profiles:    profiles,
 		sldSettings: sldSettings,
 	}
+
+	sldSettings.OnValueChange = func() {
+		p.OnValueChanged()
+	}
+	base.OnValueChange = func() {
+		p.OnValueChanged()
+	}
+	bulk.OnValueChange = func() {
+		p.OnValueChanged()
+	}
+
 	if profiles == nil || len(profiles) == 0 {
 		profileName := fmt.Sprintf("Slab 1")
 		roughnessName := fmt.Sprintf("Rougthness Slab 1/Bulk")
@@ -415,6 +444,7 @@ func NewProfilePanel(sldSettings *SldSettings, profiles ...*Profile) *ProfilePan
 	}
 
 	p.addButton = widget.NewButton("+", func() {
+		p.OnValueChanged()
 		profileName := fmt.Sprintf("Slab %d", len(p.Profiles)+1)
 		roughnessName := fmt.Sprintf("Rougthness Slab %d/Bulk", len(p.Profiles)+1)
 		edensityName := fmt.Sprintf("Edensity Slab %d", len(p.Profiles)+1)
@@ -433,7 +463,7 @@ func NewProfilePanel(sldSettings *SldSettings, profiles ...*Profile) *ProfilePan
 // - Adds a remove button to the Profile
 func (this *ProfilePanel) AddProfile(profile *Profile) {
 	if len(this.Profiles) > 0 {
-		param := this.Profiles[len(this.Profiles)-1].parameter[ProfileDefaultRoughnessID]
+		param := this.Profiles[len(this.Profiles)-1].Parameter[ProfileDefaultRoughnessID]
 		if param != nil {
 			param.name.SetText(fmt.Sprintf("Rougthness Slab %d/Slab %d", len(this.Profiles), len(this.Profiles)+1))
 		}
@@ -442,6 +472,9 @@ func (this *ProfilePanel) AddProfile(profile *Profile) {
 	profile.removeBtn = widget.NewButton("🗑", func() {
 		this.RemoveProfile(profile)
 	})
+	profile.OnValueChange = func() {
+		this.OnValueChanged()
+	}
 	if this.renderer != nil {
 		this.renderer.Update()
 	}
@@ -468,22 +501,22 @@ func (this *ProfilePanel) RemoveProfile(profile *Profile) {
 						newNumber := fmt.Sprint(j)
 						this.Profiles[j].name.SetText(name[:numberIndex] + newNumber + name[numberIndex+len(newNumber):])
 					}
-					if this.Profiles[j].parameter[ProfileDefaultRoughnessID] != nil {
-						this.Profiles[j].parameter[ProfileDefaultRoughnessID].name.SetText(roughnessName)
+					if this.Profiles[j].Parameter[ProfileDefaultRoughnessID] != nil {
+						this.Profiles[j].Parameter[ProfileDefaultRoughnessID].name.SetText(roughnessName)
 					}
-					if this.Profiles[j].parameter[ProfileDefaultEdensityID] != nil {
-						this.Profiles[j].parameter[ProfileDefaultEdensityID].name.SetText(edensityName)
+					if this.Profiles[j].Parameter[ProfileDefaultEdensityID] != nil {
+						this.Profiles[j].Parameter[ProfileDefaultEdensityID].name.SetText(edensityName)
 					}
-					if this.Profiles[j].parameter[ProfileDefaultThicknessID] != nil {
-						this.Profiles[j].parameter[ProfileDefaultThicknessID].name.SetText(thicknessName)
+					if this.Profiles[j].Parameter[ProfileDefaultThicknessID] != nil {
+						this.Profiles[j].Parameter[ProfileDefaultThicknessID].name.SetText(thicknessName)
 					}
 				}
 				this.Profiles = append(this.Profiles[:i], this.Profiles[i+1:]...)
 			} else {
 				this.Profiles = this.Profiles[:i]
 			}
-			if this.Profiles[len(this.Profiles)-1].parameter[ProfileDefaultRoughnessID] != nil {
-				this.Profiles[len(this.Profiles)-1].parameter[ProfileDefaultRoughnessID].name.SetText(fmt.Sprintf("Rougthness Slab %d/Bulk", len(this.Profiles)))
+			if this.Profiles[len(this.Profiles)-1].Parameter[ProfileDefaultRoughnessID] != nil {
+				this.Profiles[len(this.Profiles)-1].Parameter[ProfileDefaultRoughnessID].name.SetText(fmt.Sprintf("Rougthness Slab %d/Bulk", len(this.Profiles)))
 			}
 		} else {
 			this.Profiles[i].Clear()
@@ -491,6 +524,7 @@ func (this *ProfilePanel) RemoveProfile(profile *Profile) {
 			this.Profiles[i].Refresh()
 		}
 	}
+	this.OnValueChanged()
 	this.renderer.Update()
 }
 func (this *ProfilePanel) SetSldSettings(sldSettings *SldSettings) {
@@ -571,6 +605,7 @@ func NewSldDefaultSettings(name string) *SldSettings {
 	scaleP := NewParameter("Scale", 1.0)
 	backgroundP := NewParameter("Background", 2e-6)
 	deltaP := NewParameter("DeltaQz", 0)
+	zNumberP := NewParameter("zNumber", 150)
 
 	scaleP.minEntry = nil
 	scaleP.maxEntry = nil
@@ -587,9 +622,28 @@ func NewSldDefaultSettings(name string) *SldSettings {
 	deltaP.locked = nil
 	deltaP.minSize = fyne.NewSize(0, 0)
 
-	this.Profile.parameter[SldDefaultScaleID] = scaleP
-	this.Profile.parameter[SldDefaultBackgroundID] = backgroundP
-	this.Profile.parameter[SldDefaultDeltaQzID] = deltaP
+	zNumberP.minEntry = nil
+	zNumberP.maxEntry = nil
+	zNumberP.locked = nil
+	zNumberP.minSize = fyne.NewSize(0, 0)
+
+	this.Profile.Parameter[SldDefaultScaleID] = scaleP
+	this.Profile.Parameter[SldDefaultBackgroundID] = backgroundP
+	this.Profile.Parameter[SldDefaultDeltaQzID] = deltaP
+	this.Profile.Parameter[SldDefaultZNumberID] = zNumberP
+
+	this.Profile.Parameter[SldDefaultScaleID].OnChanged = func() {
+		this.OnValueChange()
+	}
+	this.Profile.Parameter[SldDefaultBackgroundID].OnChanged = func() {
+		this.OnValueChange()
+	}
+	this.Profile.Parameter[SldDefaultDeltaQzID].OnChanged = func() {
+		this.OnValueChange()
+	}
+	this.Profile.Parameter[SldDefaultZNumberID].OnChanged = func() {
+		this.OnValueChange()
+	}
 
 	this.ExtendBaseWidget(this)
 	return this
@@ -607,8 +661,8 @@ func (this *SldSettings) Resize(size fyne.Size) {
 func (this *SldSettings) MinSize() fyne.Size {
 	var paramX float32 = 0
 	var paramY float32 = 10
-	for _, parameter := range this.parameter {
-		if this.parameter != nil {
+	for _, parameter := range this.Parameter {
+		if this.Parameter != nil {
 			paramX += parameter.MinSize().Width
 			if paramY < parameter.MinSize().Height {
 				paramY = parameter.MinSize().Height
@@ -645,7 +699,7 @@ func (s SldSettingsRenderer) Refresh() {
 
 func NewSldSettingsRenderer(sldObj *SldSettings) *SldSettingsRenderer {
 	var obj []fyne.CanvasObject
-	for v := range maps.Values(sldObj.Profile.parameter) {
+	for v := range maps.Values(sldObj.Profile.Parameter) {
 		if v != nil {
 			obj = append(obj, v)
 		}

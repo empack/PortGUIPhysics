@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"errors"
 	"fmt"
 	"image/color"
 	"io"
@@ -17,14 +18,16 @@ import (
 )
 
 var (
-	App        fyne.App
-	MainWindow fyne.Window
+	App            fyne.App
+	MainWindow     fyne.Window
+	GraphContainer *fyne.Container
 )
 
 // Start GUI (function is blocking)
 func Start() {
-	App = app.New()
+	App = app.NewWithID("GUI-Physics")
 	MainWindow = App.NewWindow("Physics GUI")
+	GraphContainer = container.NewVBox()
 
 	AddMainWindow()
 }
@@ -54,10 +57,47 @@ func createImportButton(window fyne.Window) *widget.Button {
 			filename := filepath.Base(reader.URI().Path())
 
 			// handle import
-			if err := data.Import(bytes, filename); err != nil {
+			measurements, importErr := data.Import(bytes, filename)
+			if importErr != nil {
 				dialog.ShowError(err, window)
 				return
 			}
+			if len(measurements) == 0 {
+				dialog.ShowError(fmt.Errorf("no data"), window)
+				return
+			}
+
+			// convert to Point format
+			points := make([][]data.Point, measurements[0].Count)
+			for j, m := range measurements {
+				for i := 0; i < measurements[j].Count; i++ {
+					if j == 0 {
+						points[i] = make([]data.Point, len(measurements))
+					}
+					points[i][j] = data.Point{
+						X:   m.Time,
+						Y:   m.Data[i],
+						ERR: m.Error,
+					}
+				}
+			}
+
+			// Clear old plots and add new
+			GraphContainer.RemoveAll()
+			for i := 0; i < len(points); i++ {
+				plotFunc := data.NewDataFunction(points[i], data.INTERPOLATION_NONE)
+				minP, _ := plotFunc.Scope()
+				plot := NewGraphCanvas(&GraphConfig{
+					Title:      fmt.Sprintf("Data track %d", i+1),
+					IsLog:      false,
+					MinValue:   minP.X,
+					Resolution: 200,
+					Data:       plotFunc,
+				})
+
+				GraphContainer.Add(plot)
+			}
+			GraphContainer.Refresh()
 
 			// show success message
 			dialog.ShowInformation("Import successful",
@@ -106,7 +146,6 @@ func AddMainWindow() {
 			Data:     data.NewDataFunction(dataset, data.INTERPOLATION_NONE),
 		})
 	*/
-
 	dummyFunction := data.NewOldSLDFunction(
 		[]float64{0.0, 0.346197, 0.458849, 0.334000},
 		[]float64{14.2657, 10.6906},
@@ -121,20 +160,51 @@ func AddMainWindow() {
 	}
 	sldGraph := NewGraphCanvas(&GraphConfig{
 		Resolution: 100,
-		Title:      "SLD",
+		Title:      "Electron Density ",
 		Data:       dummyFunction,
 	})
+
 	dummyGraph := NewGraphCanvas(&GraphConfig{
 		Resolution: 100,
-		Title:      "Dummy Graph",
+		Title:      "Dummy Graph to load data later",
 		Data: data.NewDataFunction([]data.Point{{
 			X:   0,
 			Y:   0,
 			ERR: 0,
 		}}, data.INTERPOLATION_NONE),
 	})
+	GraphContainer.Add(dummyGraph)
 
 	profilePanel := NewProfilePanel(NewSldDefaultSettings("Settings"))
+	profilePanel.OnValueChanged = func() {
+		edensity := make([]float64, len(profilePanel.Profiles)+2)
+		sigma := make([]float64, len(profilePanel.Profiles)+1)
+		d := make([]float64, len(profilePanel.Profiles))
+
+		var err error = nil
+		edensity[0], err = profilePanel.base.Parameter[ProfileDefaultEdensityID].GetValue()
+		sigma[0], err = profilePanel.base.Parameter[ProfileDefaultRoughnessID].GetValue()
+		edensity[len(profilePanel.Profiles)+1], err = profilePanel.bulk.Parameter[ProfileDefaultEdensityID].GetValue()
+		for i, profile := range profilePanel.Profiles {
+			edensity[i+1], err = profile.Parameter[ProfileDefaultEdensityID].GetValue()
+			sigma[i+1], err = profile.Parameter[ProfileDefaultRoughnessID].GetValue()
+			d[i], err = profile.Parameter[ProfileDefaultThicknessID].GetValue()
+		}
+		var zNumberF float64 = 100.0
+		zNumberF, err = profilePanel.sldSettings.Parameter[SldDefaultZNumberID].GetValue()
+		zNumber := int(zNumberF)
+
+		if err != nil {
+			println(errors.Join(errors.New("error while reading default parameters"), err).Error())
+		}
+
+		newEdensity := data.NewOldSLDFunction(edensity, d, sigma, zNumber)
+		if newEdensity == nil {
+			println(errors.New("no old getEden function implemented for this parameter count").Error())
+			return
+		}
+		sldGraph.UpdateData(newEdensity)
+	}
 
 	content := container.NewBorder(
 		topContainer, // top
@@ -147,7 +217,7 @@ func AddMainWindow() {
 				sldGraph,
 				profilePanel,
 			),
-			dummyGraph,
+			container.NewVScroll(GraphContainer),
 		),
 	)
 

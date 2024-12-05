@@ -9,18 +9,18 @@ import (
 )
 
 type measurement struct {
-	count int
-	time  float64
-	data  []float64
-	error float64
+	Count int
+	Time  float64
+	Data  []float64
+	Error float64
 }
 
 func newMeasurment(time float64, error float64, count int, data []float64) measurement {
 	return measurement{
-		time:  time,
-		count: count,
-		data:  data,
-		error: error,
+		Time:  time,
+		Count: count,
+		Data:  data,
+		Error: error,
 	}
 }
 

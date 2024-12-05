@@ -267,7 +267,10 @@ func getEdensities(eden []float64, d []float64, sigma []float64, zNumber int) ([
 
 func get_zaxis(d []float64, zNumber int) []float64 {
 	z0 := -20.0
-	var z1 = d[1]
+	var z1 = 0.0
+	if len(d) > 3 {
+		z1 += d[1]
+	}
 	for _, f := range d {
 		z1 += f
 	}
