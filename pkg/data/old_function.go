@@ -20,7 +20,7 @@ import (
 //
 // Deprecated: Use new function implementation when possible
 func NewOldSLDFunction(eden []float64, d []float64, sigma []float64, zNumber int) *DataFunction {
-	points, err := getEden(eden, d, sigma, zNumber)
+	points, err := getEdensities(eden, d, sigma, zNumber)
 	if err != nil {
 		return nil
 	}
@@ -226,6 +226,13 @@ func getEden(eden []float64, d []float64, sigma []float64, zNumber int) ([]Point
 	return f(eden, d, sigma, zNumber), nil
 }
 
+// getEden returns a DataPoints based on the old implementation of the old getEden function
+//
+// - eden is an array with all the eden values {eden_a,eden_1,eden_2,...,eden_n,eden_b} (edensity)
+//
+// - d array with the d values {d_1,d_2,...,d_n} (Thickness)
+//
+// - sigma array with sigma values {sigma_a1,sigma_12,sigma_23,...,sigma_(n-1)(n),sigma_nb} (Roughness)
 func getEdensities(eden []float64, d []float64, sigma []float64, zNumber int) ([]Point, error) {
 
 	step_n := len(d) + 1
@@ -240,8 +247,8 @@ func getEdensities(eden []float64, d []float64, sigma []float64, zNumber int) ([
 	//calculate distances
 	var z = make([]float64, step_n)
 	z[0] = 0.0
-	for i := 1; i < step_n+1; i++ {
-		z[i] = z[i-1] + d[i]
+	for i := 1; i < step_n; i++ {
+		z[i] = z[i-1] + d[i-1]
 	}
 
 	edensities := make([]Point, zNumber)
@@ -252,7 +259,7 @@ func getEdensities(eden []float64, d []float64, sigma []float64, zNumber int) ([
 		//calculate cumulative edensity at a specific z_i
 		y := 0.0
 		for step := 0; step < step_n; step++ {
-			y += (eden[step+1] - eden[step]) * 0.5 * (1.0 + math.Erf((z_i-z[step])/math.Sqrt2*math.Abs(sigma[step])))
+			y += (eden[step+1] - eden[step]) * 0.5 * (1.0 + math.Erf((z_i-z[step])/(math.Sqrt2*math.Abs(sigma[step]))))
 		}
 		//create points for drawing
 		edensities[i] = Point{
