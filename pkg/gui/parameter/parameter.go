@@ -110,6 +110,7 @@ func (p *ParameterWrapper) addInputListener(field binding.DataItem, listenerF bi
 		field:    field,
 		listener: listenerF,
 	})
+	field.AddListener(listenerF)
 
 }
 

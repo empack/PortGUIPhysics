@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/test"
+	"physicsGUI/pkg/data"
 	"testing"
 	"time"
 )
@@ -23,14 +24,15 @@ var defaultValue binding.Float
 var checkValue binding.Bool
 
 func init() {
-	nameValue = binding.NewString()
-	minValue = binding.NewFloat()
-	maxValue = binding.NewFloat()
-	valValue = binding.NewFloat()
-	defaultValue = binding.NewFloat()
-	checkValue = binding.NewBool()
+	param := data.NewParameter(data.ParameterStaticID)
+	nameValue = param.GetName()
+	minValue = param.GetMin()
+	maxValue = param.GetMax()
+	valValue = param.GetValue()
+	defaultValue = param.GetDefault()
+	checkValue = param.GetFixed()
 
-	uutParameter = NewParameter(nameValue, defaultValue, valValue, minValue, maxValue, checkValue)
+	uutParameter = NewParameterWrapper(param)
 }
 func TestParameterNameListener(t *testing.T) {
 	t.Log("WARNING: Test with inconsistent determinacy") //TODO remove if better solution found
