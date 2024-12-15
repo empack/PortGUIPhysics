@@ -22,6 +22,7 @@ var valValue binding.Float
 var maxValue binding.Float
 var defaultValue binding.Float
 var checkValue binding.Bool
+var lockedValue binding.Bool
 
 func init() {
 	param := data.NewParameter(data.ParameterStaticID)
@@ -31,6 +32,7 @@ func init() {
 	valValue = param.GetValue()
 	defaultValue = param.GetDefault()
 	checkValue = param.GetFixed()
+	lockedValue = param.GetLocked()
 
 	uutParameter = NewWrapper(param)
 }
@@ -114,5 +116,65 @@ func TestSetParameterCheck(t *testing.T) {
 	time.Sleep(testTimeout)
 	if check := uutParameter.check.Checked; prev == check {
 		t.Errorf("TestSetParameterCheck() failed. Expected %t, got %t at object interaction after %dms", !prev, check, testTimeout/time.Millisecond)
+	}
+}
+
+func TestSetParameterLocked(t *testing.T) {
+	t.Log("WARNING: Test with inconsistent determinacy") //TODO remove if better solution found
+
+	called := false
+	lockedValue.AddListener(binding.NewDataListener(func() {
+		called = true
+	}))
+	if err := lockedValue.Set(true); err != nil {
+		t.Skip("Failed to change locked binding data")
+	}
+	time.Sleep(testTimeout)
+	if !called {
+		t.Errorf("TestSetParameterLocked() failed. Expected Listener to get called when Set locked Binding within %dms after change.", testTimeout/time.Millisecond)
+	}
+	if !uutParameter.name.Disabled() {
+		t.Errorf("TestSetParameterLocked() failed. Expected name input fields of Wrapper to be disabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+	if !uutParameter.val.Disabled() {
+		t.Errorf("TestSetParameterLocked() failed. Expected value input fields of Wrapper to be disabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+	if !uutParameter.min.Disabled() {
+		t.Errorf("TestSetParameterLocked() failed. Expected min input fields of Wrapper to be disabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+	if !uutParameter.max.Disabled() {
+		t.Errorf("TestSetParameterLocked() failed. Expected max input fields of Wrapper to be disabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+	if !uutParameter.check.Disabled() {
+		t.Errorf("TestSetParameterLocked() failed. Expected check input fields of Wrapper to be disabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+
+	if err := lockedValue.Set(false); err != nil {
+		t.Skip("Failed to change locked binding data")
+	}
+	time.Sleep(testTimeout)
+	if uutParameter.name.Disabled() {
+		t.Errorf("TestSetParameterLocked() failed. Expected name input fields of Wrapper to be enabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+	if uutParameter.val.Disabled() {
+		t.Errorf("TestSetParameterLocked() failed. Expected value input fields of Wrapper to be enabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+	if uutParameter.min.Disabled() {
+		t.Errorf("TestSetParameterLocked() failed. Expected min input fields of Wrapper to be enabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+	if uutParameter.max.Disabled() {
+		t.Errorf("TestSetParameterLocked() failed. Expected max input fields of Wrapper to be enabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+	if uutParameter.check.Disabled() {
+		t.Errorf("TestSetParameterLocked() failed. Expected check input fields of Wrapper to be enabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+
+	called = false
+	if err := lockedValue.Set(false); err != nil {
+		t.Errorf("Failed to change locked binding data on third change")
+	}
+	time.Sleep(testTimeout)
+	if called {
+		t.Errorf("TestSetParameterLocked() failed. Expected Listener to not get called with old data set again after %dms", testTimeout/time.Millisecond)
 	}
 }
