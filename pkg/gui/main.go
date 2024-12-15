@@ -10,6 +10,7 @@ import (
 	"math"
 	"path/filepath"
 	"physicsGUI/pkg/data"
+	dataio "physicsGUI/pkg/data/io"
 	"physicsGUI/pkg/function"
 	"physicsGUI/pkg/gui/graph"
 	"physicsGUI/pkg/gui/parameter"
@@ -68,7 +69,7 @@ func createImportButton(window fyne.Window) *widget.Button {
 			filename := filepath.Base(reader.URI().Path())
 
 			// handle import
-			measurements, err := data.Parse(bytes)
+			measurements, err := dataio.Parse(bytes)
 			if err != nil {
 				dialog.ShowError(err, window)
 				return
@@ -181,7 +182,7 @@ func AddMainWindow() {
 	GraphContainer.Add(g1)
 
 	// from refl_monolayer.pro:780
-	dummyFunction := data.NewOldSLDFunction(
+	dummyFunction := dataio.NewOldSLDFunction(
 		[]float64{0.0, 0.346197, 0.458849, 0.334000},
 		[]float64{14.2657, 10.6906},
 		[]float64{3.39544, 2.15980, 3.90204},
@@ -207,20 +208,12 @@ func AddMainWindow() {
 	GraphContainer.Add(dummyGraph) */
 
 	parameterName := binding.NewString()
-	parameterName.Set("Temporary Parameter")
+	parameterName.Set("Temporary ParameterWrapper")
 
-	defaultVal := binding.NewFloat()
-	defaultVal.Set(10.04)
-	val := binding.NewFloat()
-	minV := binding.NewFloat()
-	minV.Set(-math.MaxFloat64)
-	maxV := binding.NewFloat()
-	maxV.Set(math.MaxFloat64)
-	checkV := binding.NewBool()
-	param := parameter.NewParameter(parameterName, defaultVal, val, minV, maxV, checkV)
-	param1 := parameter.NewParameter(parameterName, defaultVal, val, minV, maxV, checkV)
-	param2 := parameter.NewParameter(parameterName, defaultVal, val, minV, maxV, checkV)
-	param3 := parameter.NewParameter(parameterName, defaultVal, val, minV, maxV, checkV)
+	param := parameter.NewParameterWrapper(data.NewParameter(data.ParameterDynamicID))
+	param1 := parameter.NewParameterWrapper(data.NewParameter(data.ParameterDynamicID))
+	param2 := parameter.NewParameterWrapper(data.NewParameter(data.ParameterDynamicID))
+	param3 := parameter.NewParameterWrapper(data.NewParameter(data.ParameterDynamicID))
 	profilePanel := parameter_panel.NewParameterGrid(3)
 	profilePanel.Add(param)
 	profilePanel.Add(param1)
@@ -233,16 +226,16 @@ func AddMainWindow() {
 		d := make([]float64, len(profilePanel.Profiles))
 
 		var err error = nil
-		edensity[0], err = profilePanel.base.Parameter[ProfileDefaultEdensityID].GetValue()
-		sigma[0], err = profilePanel.base.Parameter[ProfileDefaultRoughnessID].GetValue()
-		edensity[len(profilePanel.Profiles)+1], err = profilePanel.bulk.Parameter[ProfileDefaultEdensityID].GetValue()
+		edensity[0], err = profilePanel.base.ParameterWrapper[ProfileDefaultEdensityID].GetValue()
+		sigma[0], err = profilePanel.base.ParameterWrapper[ProfileDefaultRoughnessID].GetValue()
+		edensity[len(profilePanel.Profiles)+1], err = profilePanel.bulk.ParameterWrapper[ProfileDefaultEdensityID].GetValue()
 		for i, profile := range profilePanel.Profiles {
-			edensity[i+1], err = profile.Parameter[ProfileDefaultEdensityID].GetValue()
-			sigma[i+1], err = profile.Parameter[ProfileDefaultRoughnessID].GetValue()
-			d[i], err = profile.Parameter[ProfileDefaultThicknessID].GetValue()
+			edensity[i+1], err = profile.ParameterWrapper[ProfileDefaultEdensityID].GetValue()
+			sigma[i+1], err = profile.ParameterWrapper[ProfileDefaultRoughnessID].GetValue()
+			d[i], err = profile.ParameterWrapper[ProfileDefaultThicknessID].GetValue()
 		}
 		var zNumberF float64 = 100.0
-		zNumberF, err = profilePanel.sldSettings.Parameter[SldDefaultZNumberID].GetValue()
+		zNumberF, err = profilePanel.sldSettings.ParameterWrapper[SldDefaultZNumberID].GetValue()
 		zNumber := int(zNumberF)
 
 		if err != nil {

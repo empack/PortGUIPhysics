@@ -6,22 +6,30 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
+	"physicsGUI/pkg/data"
 	"physicsGUI/pkg/gui/parameter/custom_bindings"
 )
 
-type Parameter struct {
-	widget.BaseWidget
-	check *widget.Check
-	name  *widget.Entry
-	val   *FilteredEntry
-	min   *FilteredEntry
-	max   *FilteredEntry
+type FieldListener struct {
+	field    binding.DataItem
+	listener binding.DataListener
 }
 
-func (p *Parameter) CreateRenderer() fyne.WidgetRenderer {
+type ParameterWrapper struct {
+	widget.BaseWidget
+	check         *widget.Check
+	name          *widget.Entry
+	val           *FilteredEntry
+	min           *FilteredEntry
+	max           *FilteredEntry
+	parameter     *data.Parameter
+	fieldListener []*FieldListener
+}
+
+func (p *ParameterWrapper) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewVBox(p.name, container.NewHBox(container.NewCenter(p.check), container.NewCenter(p.val), container.NewVBox(p.max, p.min))))
 }
-func (p *Parameter) MinSize() fyne.Size {
+func (p *ParameterWrapper) MinSize() fyne.Size {
 	var minWidth, minHeight float32 = 20.0, 0.0 // padding offset
 	minWidth += p.check.Size().Width
 	minWidth += p.val.MinSize().Width
@@ -35,10 +43,9 @@ func (p *Parameter) MinSize() fyne.Size {
 	}
 }
 
-func NewParameter(nameVal binding.String, defaultVal, value, min, max binding.Float, checkVal binding.Bool) *Parameter {
-
+func NewParameterWrapper(parameter *data.Parameter) *ParameterWrapper {
 	// create name text field with linked data
-	name := widget.NewEntryWithData(nameVal)
+	name := widget.NewEntry()
 	name.Validator = nil
 	// create filtered entry fields, which only accept runes relevant for float inputs
 	val := NewFilteredEntry('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', 'e', '.')
@@ -51,37 +58,65 @@ func NewParameter(nameVal binding.String, defaultVal, value, min, max binding.Fl
 	check := widget.NewCheck("", func(b bool) {
 		//TODO add icon and icon change on pressing?
 	})
-
-	// Bind gui representation to the data
-	val.Bind(custom_bindings.NewLazyFloatToString(value, defaultVal))
-	minV.Bind(custom_bindings.NewLazyFloatToString(min, nil))
-	maxV.Bind(custom_bindings.NewLazyFloatToString(max, nil))
-	check.Bind(checkVal)
-
-	// update placeholder text, when default Value changed
-	defaultVal.AddListener(binding.NewDataListener(func() {
-		// set placeholder text of val to default value, when available
-		if def, err := defaultVal.Get(); err == nil {
-			val.PlaceHolder = fmt.Sprint(def)
-		}
-	}))
-
-	// set to default value, if value is submitted empty
-	val.OnSubmitted = func(s string) {
-		if s == "" {
-			if get, err := defaultVal.Get(); err == nil {
-				val.SetText(fmt.Sprint(get))
-			}
-		}
-	}
-	p := &Parameter{
+	p := &ParameterWrapper{
 		BaseWidget: widget.BaseWidget{},
 		name:       name,
 		check:      check,
 		val:        val,
 		min:        minV,
 		max:        maxV,
+		parameter:  parameter,
 	}
+
+	// define Listeners
+	defaultUpdater := binding.NewDataListener(func() {
+		// set placeholder text of val to default value, when available
+		if def, err := parameter.GetDefault().Get(); err == nil {
+			val.PlaceHolder = fmt.Sprint(def)
+		}
+	})
+	p.addInputListener(parameter.GetDefault(), defaultUpdater) // register listener with relevant binding for update on binding change
+
+	// Bind gui representation to the current data in Parameter
+	p.rebind()
+
+	// set to default value, if value is submitted empty
+	p.val.OnSubmitted = func(s string) {
+		if s == "" {
+			if get, err := p.parameter.GetDefault().Get(); err == nil {
+				p.val.SetText(fmt.Sprint(get))
+			}
+		}
+	}
+
+	// Move binding from old binding to new binding, when binding changed and update data bindings
+	parameter.BindingChannel.AddListener(data.NewChangeListener(func(old binding.DataItem, new binding.DataItem) {
+		for i, l := range p.fieldListener {
+			if l.field == old {
+				old.RemoveListener(l.listener)
+				new.AddListener(l.listener)
+				p.fieldListener[i].field = new
+			}
+		}
+		p.rebind()
+	}))
+
 	p.ExtendBaseWidget(p)
 	return p
+}
+
+func (p *ParameterWrapper) addInputListener(field binding.DataItem, listenerF binding.DataListener) {
+	p.fieldListener = append(p.fieldListener, &FieldListener{
+		field:    field,
+		listener: listenerF,
+	})
+
+}
+
+func (p *ParameterWrapper) rebind() {
+	p.name.Bind(p.parameter.GetName())
+	p.val.Bind(custom_bindings.NewLazyFloatToString(p.parameter.GetValue(), p.parameter.GetDefault()))
+	p.min.Bind(custom_bindings.NewLazyFloatToString(p.parameter.GetMin(), nil))
+	p.max.Bind(custom_bindings.NewLazyFloatToString(p.parameter.GetMax(), nil))
+	p.check.Bind(p.parameter.GetFixed())
 }
