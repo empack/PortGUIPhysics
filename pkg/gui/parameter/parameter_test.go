@@ -14,7 +14,7 @@ const testName1 = "ParameterTestName"
 const testName2 = "SomeOtherTestName"
 const testDefault float64 = 10.0
 
-var uutParameter *Parameter
+var uutParameter *ParameterWrapper
 var nameValue binding.String
 var minValue binding.Float
 var valValue binding.Float

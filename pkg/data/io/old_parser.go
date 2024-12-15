@@ -1,4 +1,4 @@
-package data
+package io
 
 import (
 	"bytes"
