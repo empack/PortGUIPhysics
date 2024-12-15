@@ -15,7 +15,7 @@ const testName1 = "ParameterTestName"
 const testName2 = "SomeOtherTestName"
 const testDefault float64 = 10.0
 
-var uutParameter *ParameterWrapper
+var uutParameter *Wrapper
 var nameValue binding.String
 var minValue binding.Float
 var valValue binding.Float
@@ -32,7 +32,7 @@ func init() {
 	defaultValue = param.GetDefault()
 	checkValue = param.GetFixed()
 
-	uutParameter = NewParameterWrapper(param)
+	uutParameter = NewWrapper(param)
 }
 func TestParameterNameListener(t *testing.T) {
 	t.Log("WARNING: Test with inconsistent determinacy") //TODO remove if better solution found
