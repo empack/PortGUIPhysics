@@ -76,6 +76,25 @@ func NewWrapper(parameter *data.Parameter) *Wrapper {
 		}
 	})
 	p.addInputListener(parameter.GetDefault(), defaultUpdater) // register listener with relevant binding for update on binding change
+	disableInputFieldsListener := binding.NewDataListener(func() {
+		// update disable input fields, when parameter is set to locked/unlocked
+		if locked, err := parameter.GetLocked().Get(); err == nil {
+			if locked {
+				p.name.Disable()
+				p.check.Disable()
+				p.val.Disable()
+				p.min.Disable()
+				p.max.Disable()
+			} else {
+				p.name.Enable()
+				p.check.Enable()
+				p.val.Enable()
+				p.min.Enable()
+				p.max.Enable()
+			}
+		}
+	})
+	p.addInputListener(parameter.GetLocked(), disableInputFieldsListener) // register listener with relevant binding for update on binding change
 
 	// Bind gui representation to the current data in Parameter
 	p.rebind()
