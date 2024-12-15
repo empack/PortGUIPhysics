@@ -49,7 +49,7 @@ func (p *ParameterGrid) Resize(size fyne.Size) {
 	p.BaseWidget.Resize(size)
 }
 
-func NewParameterGrid(rowcol int, parameter ...*parameter.ParameterWrapper) *ParameterGrid {
+func NewParameterGrid(rowcol int, parameter ...*parameter.Wrapper) *ParameterGrid {
 	objects := make([]fyne.CanvasObject, len(parameter))
 	for i := 0; i < len(objects); i++ {
 		objects[i] = parameter[i]
@@ -70,14 +70,14 @@ func (p *ParameterGrid) SetRowCols(rowcols int) {
 	}
 }
 
-func (p *ParameterGrid) Add(parameter *parameter.ParameterWrapper) {
+func (p *ParameterGrid) Add(parameter *parameter.Wrapper) {
 	p.objects = append(p.objects, parameter)
 	if p.renderer != nil {
 		p.renderer.Update()
 	}
 }
 
-func (p *ParameterGrid) Remove(parameter *parameter.ParameterWrapper) {
+func (p *ParameterGrid) Remove(parameter *parameter.Wrapper) {
 	index := slices.Index(p.objects, fyne.CanvasObject(parameter))
 	if index != -1 {
 		p.objects = append(p.objects[:index], p.objects[index+1:]...)

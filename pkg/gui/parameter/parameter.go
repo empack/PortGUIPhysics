@@ -15,7 +15,7 @@ type FieldListener struct {
 	listener binding.DataListener
 }
 
-type ParameterWrapper struct {
+type Wrapper struct {
 	widget.BaseWidget
 	check         *widget.Check
 	name          *widget.Entry
@@ -26,10 +26,10 @@ type ParameterWrapper struct {
 	fieldListener []*FieldListener
 }
 
-func (p *ParameterWrapper) CreateRenderer() fyne.WidgetRenderer {
+func (p *Wrapper) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewVBox(p.name, container.NewHBox(container.NewCenter(p.check), container.NewCenter(p.val), container.NewVBox(p.max, p.min))))
 }
-func (p *ParameterWrapper) MinSize() fyne.Size {
+func (p *Wrapper) MinSize() fyne.Size {
 	var minWidth, minHeight float32 = 20.0, 0.0 // padding offset
 	minWidth += p.check.Size().Width
 	minWidth += p.val.MinSize().Width
@@ -43,7 +43,7 @@ func (p *ParameterWrapper) MinSize() fyne.Size {
 	}
 }
 
-func NewParameterWrapper(parameter *data.Parameter) *ParameterWrapper {
+func NewWrapper(parameter *data.Parameter) *Wrapper {
 	// create name text field with linked data
 	name := widget.NewEntry()
 	name.Validator = nil
@@ -58,7 +58,7 @@ func NewParameterWrapper(parameter *data.Parameter) *ParameterWrapper {
 	check := widget.NewCheck("", func(b bool) {
 		//TODO add icon and icon change on pressing?
 	})
-	p := &ParameterWrapper{
+	p := &Wrapper{
 		BaseWidget: widget.BaseWidget{},
 		name:       name,
 		check:      check,
@@ -105,7 +105,7 @@ func NewParameterWrapper(parameter *data.Parameter) *ParameterWrapper {
 	return p
 }
 
-func (p *ParameterWrapper) addInputListener(field binding.DataItem, listenerF binding.DataListener) {
+func (p *Wrapper) addInputListener(field binding.DataItem, listenerF binding.DataListener) {
 	p.fieldListener = append(p.fieldListener, &FieldListener{
 		field:    field,
 		listener: listenerF,
@@ -114,7 +114,7 @@ func (p *ParameterWrapper) addInputListener(field binding.DataItem, listenerF bi
 
 }
 
-func (p *ParameterWrapper) rebind() {
+func (p *Wrapper) rebind() {
 	p.name.Bind(p.parameter.GetName())
 	p.val.Bind(custom_bindings.NewLazyFloatToString(p.parameter.GetValue(), p.parameter.GetDefault()))
 	p.min.Bind(custom_bindings.NewLazyFloatToString(p.parameter.GetMin(), nil))

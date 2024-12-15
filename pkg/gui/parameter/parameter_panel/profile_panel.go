@@ -37,7 +37,7 @@ type ParameterProfile struct {
 	widget.BaseWidget
 	name        *widget.Entry
 	buttonPanel fyne.CanvasObject
-	parameter   []*parameter.ParameterWrapper
+	parameter   []*parameter.Wrapper
 	renderer    *ParameterProfileRenderer
 }
 
@@ -51,18 +51,18 @@ func NewParameterProfile(nameVal binding.String) *ParameterProfile {
 	name.Validator = nil
 	p := &ParameterProfile{
 		name:      name,
-		parameter: []*parameter.ParameterWrapper{},
+		parameter: []*parameter.Wrapper{},
 	}
 	p.ExtendBaseWidget(p)
 	return p
 }
-func (p *ParameterProfile) Add(parameter *parameter.ParameterWrapper) {
+func (p *ParameterProfile) Add(parameter *parameter.Wrapper) {
 	p.parameter = append(p.parameter, parameter)
 	if p.renderer != nil {
 		p.renderer.Update()
 	}
 }
-func (p *ParameterProfile) Remove(parameter *parameter.ParameterWrapper) {
+func (p *ParameterProfile) Remove(parameter *parameter.Wrapper) {
 	parameterIndex := slices.Index(p.parameter, parameter)
 	if parameterIndex == -1 {
 		return
