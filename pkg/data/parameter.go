@@ -33,16 +33,26 @@ func NewParameter(uidType ParameterIDType) *Parameter {
 		DataChannel:    NewListenerGroup(),
 		BindingChannel: NewChangeListenerGroup[binding.DataItem](),
 		uidType:        uidType,
+		uid:            ParameterID("unregistered"),
 	}
-
-	//TODO add parameter ID generator
-
-	p.BindName(binding.NewString())
-	p.BindValue(binding.NewFloat())
-	p.BindMin(binding.NewFloat())
-	p.BindMax(binding.NewFloat())
-	p.BindDefault(binding.NewFloat())
-	p.BindFixed(binding.NewBool())
+	name := binding.NewString()
+	_ = name.Set(DefaultParameterName)
+	p.BindName(name)
+	value := binding.NewFloat()
+	_ = value.Set(DefaultParameterValue)
+	p.BindValue(value)
+	minV := binding.NewFloat()
+	_ = minV.Set(DefaultParameterMin)
+	p.BindMin(minV)
+	maxV := binding.NewFloat()
+	_ = maxV.Set(DefaultParameterMax)
+	p.BindMax(maxV)
+	defaultValue := binding.NewFloat()
+	_ = defaultValue.Set(DefaultParameterDefault)
+	p.BindDefault(defaultValue)
+	fixed := binding.NewBool()
+	_ = fixed.Set(DefaultParameterCheck)
+	p.BindFixed(fixed)
 	p.BindLocked(binding.NewBool())
 
 	return p

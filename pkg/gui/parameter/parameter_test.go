@@ -178,3 +178,32 @@ func TestSetParameterLocked(t *testing.T) {
 		t.Errorf("TestSetParameterLocked() failed. Expected Listener to not get called with old data set again after %dms", testTimeout/time.Millisecond)
 	}
 }
+
+func TestUpdateParameterValueWhenLocked(t *testing.T) {
+	t.Log("WARNING: Test with inconsistent determinacy") //TODO remove if better solution found
+
+	const testValue = 700.123
+	called := false
+	valValue.AddListener(binding.NewDataListener(func() {
+		called = true
+	}))
+
+	if err := lockedValue.Set(true); err != nil {
+		t.Skip("Failed to change locked binding data")
+	}
+	time.Sleep(testTimeout)
+	if !uutParameter.name.Disabled() {
+		t.Errorf("TestUpdateParameterValueWhenLocked() failed. Expected name input fields of Wrapper to be disabled within %dms after Set locked Binding.", testTimeout/time.Millisecond)
+	}
+	called = false
+	if err := valValue.Set(testValue); err != nil {
+		t.Skip("Failed to change value binding data")
+	}
+	time.Sleep(testTimeout)
+	if !called {
+		t.Errorf("TestUpdateParameterValueWhenLocked() failed. Listener to be called within %dms.", testTimeout/time.Millisecond)
+	}
+	if uutParameter.name.Text != fmt.Sprint(testValue) {
+		t.Errorf("TestUpdateParameterValueWhenLocked() failed. Expected value to be %s in disabled filed but got %s after %dms.", fmt.Sprint(testValue), uutParameter.name.Text, testTimeout/time.Millisecond)
+	}
+}
