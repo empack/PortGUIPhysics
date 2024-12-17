@@ -26,19 +26,16 @@ func (p *ParameterHandler) Add(parameter *Parameter) ParameterID {
 	p.ChangeID(parameter, request)
 	p.parameters[parameter.uid] = parameter
 	p.trigger(nil, parameter)
-	println("Added new parameter:" + parameter.uid)
 	return parameter.uid
 }
 
 func (p *ParameterHandler) Remove(parameter *Parameter) {
 	if param, ok := p.parameters[parameter.uid]; !ok {
-		println("Parameter not found:" + parameter.uid)
 		return
 	} else {
 		p.trigger(param, nil)
 		delete(p.parameters, parameter.uid)
 		p.uidGenerator.unregister(parameter.uid)
-		println("Removed Parameter:" + parameter.uid)
 	}
 }
 
