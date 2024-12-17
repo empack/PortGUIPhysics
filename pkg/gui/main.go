@@ -13,7 +13,6 @@ import (
 	dataio "physicsGUI/pkg/data/io"
 	"physicsGUI/pkg/function"
 	"physicsGUI/pkg/gui/graph"
-	"physicsGUI/pkg/gui/parameter"
 	"physicsGUI/pkg/gui/parameter/parameter_panel"
 
 	"fyne.io/fyne/v2"
@@ -207,18 +206,16 @@ func AddMainWindow() {
 	})
 	GraphContainer.Add(dummyGraph) */
 
+	parameterStorage := data.NewParameterHandler()
+	profilePanel := parameter_panel.NewBoundParameterGrid(3, parameterStorage)
+
 	parameterName := binding.NewString()
 	parameterName.Set("Temporary ParameterWrapper")
 
-	param := parameter.NewWrapper(data.NewParameter(data.ParameterDynamicID))
-	param1 := parameter.NewWrapper(data.NewParameter(data.ParameterDynamicID))
-	param2 := parameter.NewWrapper(data.NewParameter(data.ParameterDynamicID))
-	param3 := parameter.NewWrapper(data.NewParameter(data.ParameterDynamicID))
-	profilePanel := parameter_panel.NewParameterGrid(3)
-	profilePanel.Add(param)
-	profilePanel.Add(param1)
-	profilePanel.Add(param2)
-	profilePanel.Add(param3)
+	parameterStorage.Add(data.NewParameter(data.ParameterDynamicID))
+	parameterStorage.Add(data.NewParameter(data.ParameterDynamicID))
+	parameterStorage.Add(data.NewParameter(data.ParameterDynamicID))
+	parameterStorage.Add(data.NewParameter(data.ParameterDynamicID))
 
 	/* profilePanel.OnValueChanged = func() {
 		edensity := make([]float64, len(profilePanel.Profiles)+2)

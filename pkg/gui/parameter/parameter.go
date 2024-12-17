@@ -22,7 +22,7 @@ type Wrapper struct {
 	val           *FilteredEntry
 	min           *FilteredEntry
 	max           *FilteredEntry
-	parameter     *data.Parameter
+	Parameter     *data.Parameter
 	fieldListener []*FieldListener
 }
 
@@ -65,7 +65,7 @@ func NewWrapper(parameter *data.Parameter) *Wrapper {
 		val:        val,
 		min:        minV,
 		max:        maxV,
-		parameter:  parameter,
+		Parameter:  parameter,
 	}
 
 	// define Listeners
@@ -102,7 +102,7 @@ func NewWrapper(parameter *data.Parameter) *Wrapper {
 	// set to default value, if value is submitted empty
 	p.val.OnSubmitted = func(s string) {
 		if s == "" {
-			if get, err := p.parameter.GetDefault().Get(); err == nil {
+			if get, err := p.Parameter.GetDefault().Get(); err == nil {
 				p.val.SetText(fmt.Sprint(get))
 			}
 		}
@@ -134,9 +134,9 @@ func (p *Wrapper) addInputListener(field binding.DataItem, listenerF binding.Dat
 }
 
 func (p *Wrapper) rebind() {
-	p.name.Bind(p.parameter.GetName())
-	p.val.Bind(custom_bindings.NewLazyFloatToString(p.parameter.GetValue(), p.parameter.GetDefault()))
-	p.min.Bind(custom_bindings.NewLazyFloatToString(p.parameter.GetMin(), nil))
-	p.max.Bind(custom_bindings.NewLazyFloatToString(p.parameter.GetMax(), nil))
-	p.check.Bind(p.parameter.GetFixed())
+	p.name.Bind(p.Parameter.GetName())
+	p.val.Bind(custom_bindings.NewLazyFloatToString(p.Parameter.GetValue(), p.Parameter.GetDefault()))
+	p.min.Bind(custom_bindings.NewLazyFloatToString(p.Parameter.GetMin(), nil))
+	p.max.Bind(custom_bindings.NewLazyFloatToString(p.Parameter.GetMax(), nil))
+	p.check.Bind(p.Parameter.GetFixed())
 }

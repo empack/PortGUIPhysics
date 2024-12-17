@@ -33,7 +33,7 @@ func NewParameter(uidType ParameterIDType) *Parameter {
 		DataChannel:    NewListenerGroup(),
 		BindingChannel: NewChangeListenerGroup[binding.DataItem](),
 		uidType:        uidType,
-		uid:            ParameterID("unregistered"),
+		uid:            ParameterID("Parameter"),
 	}
 	name := binding.NewString()
 	_ = name.Set(DefaultParameterName)
