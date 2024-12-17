@@ -7,20 +7,39 @@ import (
 )
 
 type ParameterHandler struct {
+	ChangeListenerGroup[*Parameter]
 	parameters   map[ParameterID]*Parameter
 	uidGenerator *ParameterUIDGenerator
+}
+
+func NewParameterHandler() *ParameterHandler {
+	uidGenerator := NewParameterUIDGenerator()
+	return &ParameterHandler{
+		parameters:   make(map[ParameterID]*Parameter),
+		uidGenerator: uidGenerator,
+	}
 }
 
 func (p *ParameterHandler) Add(parameter *Parameter) ParameterID {
 	request := parameter.uid
 	parameter.uid = "unregistered"
 	p.ChangeID(parameter, request)
+	p.parameters[parameter.uid] = parameter
+	p.trigger(nil, parameter)
+	println("Added new parameter:" + parameter.uid)
 	return parameter.uid
 }
 
-func (p *ParameterHandler) Remove(uid ParameterID) {
-	delete(p.parameters, uid)
-	p.uidGenerator.unregister(uid)
+func (p *ParameterHandler) Remove(parameter *Parameter) {
+	if param, ok := p.parameters[parameter.uid]; !ok {
+		println("Parameter not found:" + parameter.uid)
+		return
+	} else {
+		p.trigger(param, nil)
+		delete(p.parameters, parameter.uid)
+		p.uidGenerator.unregister(parameter.uid)
+		println("Removed Parameter:" + parameter.uid)
+	}
 }
 
 func (p *ParameterHandler) TryChangeID(parameter *Parameter, requestedID ParameterID) bool {
@@ -30,7 +49,9 @@ func (p *ParameterHandler) TryChangeID(parameter *Parameter, requestedID Paramet
 	} else {
 		oldID := parameter.uid
 		parameter.uid = requestedID
-		p.uidGenerator.unregister(oldID)
+		if oldID != parameter.uid {
+			p.uidGenerator.unregister(oldID)
+		}
 		return true
 	}
 }
@@ -38,10 +59,14 @@ func (p *ParameterHandler) TryChangeID(parameter *Parameter, requestedID Paramet
 func (p *ParameterHandler) ChangeID(parameter *Parameter, requestedID ParameterID) {
 	b := p.TryChangeID(parameter, requestedID)
 	if !b {
-		p.uidGenerator.unregister(parameter.uid)
-		idBase := ""
-		if base, err := parameter.class.Get(); err == nil {
-			idBase = base
+		if parameter.uid != requestedID {
+			p.uidGenerator.unregister(parameter.uid)
+		}
+		idBase := "Parameter"
+		if parameter.class != nil {
+			if base, err := parameter.class.Get(); err == nil {
+				idBase = base
+			}
 		}
 		newID := p.uidGenerator.generateID(idBase)
 		parameter.uid = newID
@@ -79,6 +104,12 @@ func (p *ParameterHandler) GetAll() []*Parameter {
 
 type ParameterUIDGenerator struct {
 	ids map[ParameterID]bool
+}
+
+func NewParameterUIDGenerator() *ParameterUIDGenerator {
+	return &ParameterUIDGenerator{
+		ids: make(map[ParameterID]bool),
+	}
 }
 
 func (g *ParameterUIDGenerator) unregister(uid ParameterID) {
