@@ -11,7 +11,8 @@ import (
 
 type ParameterGridRenderer struct {
 	fyne.WidgetRenderer
-	impl *ParameterGrid
+	impl   *ParameterGrid
+	cntPnl *container.Scroll
 }
 
 func NewParameterGridRenderer(impl *ParameterGrid) *ParameterGridRenderer {
@@ -27,7 +28,13 @@ func (r *ParameterGridRenderer) Update() {
 	}
 	objects[len(r.impl.objects)] = r.impl.btnPnl
 	cnt := container.NewAdaptiveGrid(r.impl.rowcol, objects...)
-	r.WidgetRenderer = widget.NewSimpleRenderer(container.NewVScroll(cnt))
+	oldOffset := fyne.NewPos(0, 0)
+	if r.cntPnl != nil {
+		oldOffset = r.cntPnl.Offset
+	}
+	r.cntPnl = container.NewScroll(cnt)
+	r.cntPnl.Offset = oldOffset
+	r.WidgetRenderer = widget.NewSimpleRenderer(r.cntPnl)
 	r.WidgetRenderer.Layout(r.impl.Size())
 }
 
