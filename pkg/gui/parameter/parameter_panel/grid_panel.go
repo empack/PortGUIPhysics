@@ -27,7 +27,7 @@ func (r *ParameterGridRenderer) Update() {
 	}
 	objects[len(r.impl.objects)] = r.impl.btnPnl
 	cnt := container.NewAdaptiveGrid(r.impl.rowcol, objects...)
-	r.WidgetRenderer = widget.NewSimpleRenderer(container.NewHScroll(cnt))
+	r.WidgetRenderer = widget.NewSimpleRenderer(container.NewVScroll(cnt))
 	r.WidgetRenderer.Layout(r.impl.Size())
 }
 
