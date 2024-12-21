@@ -181,21 +181,6 @@ func AddMainWindow() {
 
 	GraphContainer.Add(g1)
 
-	// from refl_monolayer.pro:780
-	dummyFunction := dataio.NewOldSLDFunction(
-		[]float64{0.0, 0.346197, 0.458849, 0.334000},
-		[]float64{14.2657, 10.6906},
-		[]float64{3.39544, 2.15980, 3.90204},
-		150)
-
-	dummyFunction.SetInterpolation(function.INTERPOLATION_LINEAR)
-
-	sldGraph := graph.NewGraphCanvas(&graph.GraphConfig{
-		Resolution: 5,
-		Title:      "Electron Density",
-		Function:   dummyFunction,
-	})
-
 	/* dummyGraph := graph.NewGraphCanvas(&graph.GraphConfig{
 		Resolution: 100,
 		Title:      "Dummy Graph to load data later",
@@ -208,8 +193,20 @@ func AddMainWindow() {
 	GraphContainer.Add(dummyGraph) */
 
 	parameterHandler := data.NewParameterHandler()
-	profilePanel := parameter_panel.NewParameterGrid(2)
-	profilePanel.Bind(parameterHandler)
+	profilePanel := parameter_panel.NewBoundParameterGrid(parameterHandler)
+	for _, param := range data.StartUpParameters {
+		parameterHandler.Add(param)
+	}
+	edensitys := parameterHandler.GetByClass("Eden")
+	d := parameterHandler.GetByClass("Thickness")
+	sigma := parameterHandler.GetByClass("Roughness")
+	sldFunction := function.NewSLDFunction(edensitys, d, sigma, 150)
+
+	sldGraph := graph.NewGraphCanvas(&graph.GraphConfig{
+		Resolution: 5,
+		Title:      "Electron Density",
+		Function:   &sldFunction.Function,
+	})
 
 	/* profilePanel.OnValueChanged = func() {
 		edensity := make([]float64, len(profilePanel.Profiles)+2)

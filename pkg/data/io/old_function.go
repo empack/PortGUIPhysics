@@ -1,9 +1,10 @@
-package data
+package io
 
 import (
 	"errors"
 	"fmt"
 	"math"
+	"physicsGUI/pkg/function"
 )
 
 // NewOldSLDFunction returns a DataPoint function Based on the old implementation of the getEden function
@@ -19,18 +20,18 @@ import (
 // **NOTE** This uses old 1 to 1 translated code from IDL and has not to be defined for any parameter count
 //
 // Deprecated: Use new function implementation when possible
-func NewOldSLDFunction(eden []float64, d []float64, sigma []float64, zNumber int) *DataFunction {
+func NewOldSLDFunction(eden []float64, d []float64, sigma []float64, zNumber int) *function.Function {
 	points, err := getEdensities(eden, d, sigma, zNumber)
 	if err != nil {
 		return nil
 	}
-	return NewDataFunction(points, INTERPOLATION_NONE)
+	return function.NewFunction(points, function.INTERPOLATION_NONE)
 }
 
-var edens map[int]func(eden []float64, d []float64, sigma []float64, zNumber int) []Point
+var edens map[int]func(eden []float64, d []float64, sigma []float64, zNumber int) function.Points
 
 func init() {
-	edens = make(map[int]func(eden []float64, d []float64, sigma []float64, zNumber int) []Point)
+	edens = make(map[int]func(eden []float64, d []float64, sigma []float64, zNumber int) function.Points)
 	edens[1] = eden1
 	edens[2] = eden2
 	edens[3] = eden3
@@ -38,7 +39,7 @@ func init() {
 }
 
 // created based on eden3
-func eden1(edensitys []float64, d []float64, sigma []float64, znumber int) []Point {
+func eden1(edensitys []float64, d []float64, sigma []float64, znumber int) function.Points {
 	zaxis := get_zaxis(d, znumber)
 
 	eden_a := edensitys[0] //old ?
@@ -51,16 +52,16 @@ func eden1(edensitys []float64, d []float64, sigma []float64, znumber int) []Poi
 	z_a1 := 0.0
 	z_1b := d_1
 
-	eden := make([]Point, znumber)
+	eden := make(function.Points, znumber)
 	for i := 0; i < znumber; i++ {
 		z := zaxis[i]
 		step1 := (eden_1 - eden_a) * 0.5 * (1.0 + math.Erf((z-z_a1)/(math.Sqrt2*sigma_a1)))
 		step2 := (eden_b - eden_1) * 0.5 * (1.0 + math.Erf((z-z_1b)/(math.Sqrt2*sigma_1b)))
 		eden_i := step1 + step2
-		eden[i] = Point{
-			X:   z,
-			Y:   eden_i,
-			ERR: 0,
+		eden[i] = &function.Point{
+			X:     z,
+			Y:     eden_i,
+			Error: 0,
 		}
 	}
 
@@ -68,7 +69,7 @@ func eden1(edensitys []float64, d []float64, sigma []float64, znumber int) []Poi
 }
 
 // created based on eden3
-func eden2(edensitys []float64, d []float64, sigma []float64, znumber int) []Point {
+func eden2(edensitys []float64, d []float64, sigma []float64, znumber int) function.Points {
 	zaxis := get_zaxis(d, znumber)
 
 	eden_a := edensitys[0] // old ?
@@ -85,17 +86,17 @@ func eden2(edensitys []float64, d []float64, sigma []float64, znumber int) []Poi
 	z_12 := d_1
 	z_2b := d_1 + d_2
 
-	eden := make([]Point, znumber)
+	eden := make(function.Points, znumber)
 	for i := 0; i < znumber; i++ {
 		z := zaxis[i]
 		step1 := (eden_1 - eden_a) * 0.5 * (1.0 + math.Erf((z-z_a1)/(math.Sqrt2*sigma_a1)))
 		step2 := (eden_2 - eden_1) * 0.5 * (1.0 + math.Erf((z-z_12)/(math.Sqrt2*sigma_12)))
 		step3 := (eden_b - eden_2) * 0.5 * (1.0 + math.Erf((z-z_2b)/(math.Sqrt2*sigma_2b)))
 		eden_i := step1 + step2 + step3
-		eden[i] = Point{
-			X:   z,
-			Y:   eden_i,
-			ERR: 0,
+		eden[i] = &function.Point{
+			X:     z,
+			Y:     eden_i,
+			Error: 0,
 		}
 	}
 
@@ -103,7 +104,7 @@ func eden2(edensitys []float64, d []float64, sigma []float64, znumber int) []Poi
 }
 
 // get_eden3 from fit_refl_monolayer
-func eden3(edensitys []float64, d []float64, sigma []float64, znumber int) []Point {
+func eden3(edensitys []float64, d []float64, sigma []float64, znumber int) function.Points {
 	zaxis := get_zaxis(d, znumber)
 
 	eden_a := edensitys[0] //old 0.0
@@ -124,7 +125,7 @@ func eden3(edensitys []float64, d []float64, sigma []float64, znumber int) []Poi
 	z_23 := d_1 + d_2
 	z_3b := d_1 + d_2 + d_3
 
-	eden := make([]Point, znumber)
+	eden := make(function.Points, znumber)
 	for i := 0; i < znumber; i++ {
 		z := zaxis[i]
 		step1 := (eden_1 - eden_a) * 0.5 * (1.0 + math.Erf((z-z_a1)/(math.Sqrt2*sigma_a1)))
@@ -132,10 +133,10 @@ func eden3(edensitys []float64, d []float64, sigma []float64, znumber int) []Poi
 		step3 := (eden_3 - eden_2) * 0.5 * (1.0 + math.Erf((z-z_23)/(math.Sqrt2*sigma_23)))
 		step4 := (eden_b - eden_3) * 0.5 * (1.0 + math.Erf((z-z_3b)/(math.Sqrt2*sigma_3b)))
 		eden_i := step1 + step2 + step3 + step4
-		eden[i] = Point{
-			X:   z,
-			Y:   eden_i,
-			ERR: 0,
+		eden[i] = &function.Point{
+			X:     z,
+			Y:     eden_i,
+			Error: 0,
 		}
 	}
 
@@ -143,7 +144,7 @@ func eden3(edensitys []float64, d []float64, sigma []float64, znumber int) []Poi
 }
 
 // get_eden from fit_bilayer_rigaku
-func eden7(edensitys []float64, d []float64, sigma []float64, zNumber int) []Point {
+func eden7(edensitys []float64, d []float64, sigma []float64, zNumber int) function.Points {
 
 	zaxis := get_zaxis(d, zNumber)
 
@@ -182,7 +183,7 @@ func eden7(edensitys []float64, d []float64, sigma []float64, zNumber int) []Poi
 	z_67 := d_1 + 2*d_2 + d_3 + d_4 + d_5 + d_6
 	z_7b := d_1 + 2*d_2 + d_3 + d_4 + d_5 + d_6 + d_7
 
-	eden := make([]Point, zNumber)
+	eden := make(function.Points, zNumber)
 
 	for i := 0; i < zNumber; i++ {
 		z := zaxis[i]
@@ -196,10 +197,10 @@ func eden7(edensitys []float64, d []float64, sigma []float64, zNumber int) []Poi
 		step7 := (eden_7 - eden_6) * 0.5 * (1.0 + math.Erf((z-z_67)/(math.Sqrt2*sigma_67)))
 		step8 := (eden_b - eden_7) * 0.5 * (1.0 + math.Erf((z-z_7b)/(math.Sqrt2*sigma_7b)))
 		eden_i := eden_a + step1 + step2 + step3a + step3b + step4 + step5 + step6 + step7 + step8
-		eden[i] = Point{
-			X:   z,
-			Y:   eden_i,
-			ERR: 0,
+		eden[i] = &function.Point{
+			X:     z,
+			Y:     eden_i,
+			Error: 0,
 		}
 	}
 
@@ -217,7 +218,7 @@ func eden7(edensitys []float64, d []float64, sigma []float64, zNumber int) []Poi
 // **NOTE** This uses old 1 to 1 translated code from IDL and has not to be defined for any parameter count
 //
 // Deprecated: Use new function implementation when possible
-func getEden(eden []float64, d []float64, sigma []float64, zNumber int) ([]Point, error) { // TODO understand this mess?
+func getEden(eden []float64, d []float64, sigma []float64, zNumber int) (function.Points, error) { // TODO understand this mess?
 	f := edens[len(d)]
 	if f == nil {
 		return nil, errors.New(fmt.Sprintf("No getEden schema defined for %d edens", len(d)))
@@ -233,7 +234,7 @@ func getEden(eden []float64, d []float64, sigma []float64, zNumber int) ([]Point
 // - d array with the d values {d_1,d_2,...,d_n} (Thickness)
 //
 // - sigma array with sigma values {sigma_a1,sigma_12,sigma_23,...,sigma_(n-1)(n),sigma_nb} (Roughness)
-func getEdensities(eden []float64, d []float64, sigma []float64, zNumber int) ([]Point, error) {
+func getEdensities(eden []float64, d []float64, sigma []float64, zNumber int) ([]*function.Point, error) {
 
 	step_n := len(d) + 1
 	//throw error if the param number does not match the scheme
@@ -251,7 +252,7 @@ func getEdensities(eden []float64, d []float64, sigma []float64, zNumber int) ([
 		z[i] = z[i-1] + d[i-1]
 	}
 
-	edensities := make([]Point, zNumber)
+	edensities := make([]*function.Point, zNumber)
 	zaxis := get_zaxis(d, zNumber)
 
 	for i := 0; i < zNumber; i++ {
@@ -262,10 +263,10 @@ func getEdensities(eden []float64, d []float64, sigma []float64, zNumber int) ([
 			y += (eden[step+1] - eden[step]) * 0.5 * (1.0 + math.Erf((z_i-z[step])/(math.Sqrt2*math.Abs(sigma[step]))))
 		}
 		//create points for drawing
-		edensities[i] = Point{
-			X:   z_i,
-			Y:   y,
-			ERR: 0,
+		edensities[i] = &function.Point{
+			X:     z_i,
+			Y:     y,
+			Error: 0,
 		}
 	}
 

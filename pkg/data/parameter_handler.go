@@ -60,10 +60,8 @@ func (p *ParameterHandler) ChangeID(parameter *Parameter, requestedID ParameterI
 			p.uidGenerator.unregister(parameter.uid)
 		}
 		idBase := "Parameter"
-		if parameter.class != nil {
-			if base, err := parameter.class.Get(); err == nil {
-				idBase = base
-			}
+		if parameter.class != "" {
+			idBase = string(parameter.class)
 		}
 		newID := p.uidGenerator.generateID(idBase)
 		parameter.uid = newID
@@ -81,7 +79,7 @@ func (p *ParameterHandler) GetByUID(uid ParameterID) *Parameter {
 func (p *ParameterHandler) GetByClass(classname string) []*Parameter {
 	res := make([]*Parameter, 0)
 	for _, param := range p.parameters {
-		if class, err := param.class.Get(); err == nil && strings.ToLower(class) == strings.ToLower(classname) {
+		if strings.ToLower(string(param.class)) == strings.ToLower(classname) {
 			res = append(res, param)
 		}
 	}

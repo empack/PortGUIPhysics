@@ -5,7 +5,7 @@ import (
 )
 
 type ParameterIDType int
-type ParameterClass binding.String
+type ParameterClass string
 type ParameterID string
 
 const (
@@ -56,6 +56,17 @@ func NewParameter(uidType ParameterIDType) *Parameter {
 	p.BindLocked(binding.NewBool())
 
 	return p
+}
+
+// init has to be called after creating the struct manually to link the DataChange trigger with the binding DataChange event
+func (p *Parameter) init() {
+	p.name.AddListener(p.DataChannel)
+	p.value.AddListener(p.DataChannel)
+	p.min.AddListener(p.DataChannel)
+	p.max.AddListener(p.DataChannel)
+	p.defaultValue.AddListener(p.DataChannel)
+	p.locked.AddListener(p.DataChannel)
+	p.fixed.AddListener(p.DataChannel)
 }
 
 // Get Binding Functions

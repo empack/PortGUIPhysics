@@ -98,13 +98,16 @@ func (p *ParameterGrid) MinSize() fyne.Size {
 	return fyne.NewSize(p.BaseWidget.MinSize().Width, maxParamHeight)
 }
 
-func NewBoundParameterGrid(rowcol int, handler *data.ParameterHandler) *ParameterGrid {
-	p := NewParameterGrid(rowcol)
+func NewBoundParameterGrid(handler *data.ParameterHandler, params ...*parameter.Wrapper) *ParameterGrid {
+	p := NewParameterGrid()
 	p.Bind(handler)
+	for _, param := range params {
+		p.Add(param)
+	}
 	return p
 }
 
-func NewParameterGrid(rowcol int, params ...*parameter.Wrapper) *ParameterGrid {
+func NewParameterGrid(params ...*parameter.Wrapper) *ParameterGrid {
 	objects := make([]fyne.CanvasObject, len(params))
 	for i := 0; i < len(objects); i++ {
 		objects[i] = params[i]
@@ -112,7 +115,7 @@ func NewParameterGrid(rowcol int, params ...*parameter.Wrapper) *ParameterGrid {
 	g := &ParameterGrid{
 		BaseWidget: widget.BaseWidget{},
 		objects:    params,
-		rowcol:     rowcol,
+		rowcol:     1,
 	}
 	g.btnPnl = container.NewStack(widget.NewButton("+", func() {
 		g.Add(parameter.NewWrapper(data.NewParameter(data.ParameterDynamicID)))
