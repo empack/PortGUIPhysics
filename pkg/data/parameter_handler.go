@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 )
 
@@ -83,6 +84,12 @@ func (p *ParameterHandler) GetByClass(classname string) []*Parameter {
 			res = append(res, param)
 		}
 	}
+	slices.SortFunc(res, func(a, b *Parameter) int {
+		maxID := fmt.Sprint("-", math.MaxInt)
+		aCleared := strings.Replace(strings.Replace(string(a.uid), "-a", "-0", 1), "-b", maxID, 1)
+		bCleared := strings.Replace(strings.Replace(string(b.uid), "-a", "-0", 1), "-b", maxID, 1)
+		return strings.Compare(aCleared, bCleared)
+	})
 	return res
 }
 
@@ -94,6 +101,9 @@ func (p *ParameterHandler) GetAll() []*Parameter {
 		values[index] = v
 		index++
 	}
+	slices.SortFunc(values, func(a, b *Parameter) int {
+		return strings.Compare(string(a.uid), string(b.uid))
+	})
 	return values
 }
 
