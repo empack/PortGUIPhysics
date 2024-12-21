@@ -74,8 +74,28 @@ func (p *ParameterGrid) Resize(size fyne.Size) {
 		}
 	}
 	p.rowcol = int(size.Width / maxParamWidth)
-	p.renderer.Update()
+	if p.objects == nil || len(p.objects) == 0 {
+		p.rowcol = 1
+	}
+	if p.renderer != nil {
+		p.renderer.Update()
+	}
 	p.BaseWidget.Resize(size)
+}
+
+func (p *ParameterGrid) MinSize() fyne.Size {
+	var maxParamWidth float32 = 0.1 // not 0.0 to prevent div by zero exception
+	var maxParamHeight float32 = 0.0
+	for i, c := range p.objects {
+		minSize := c.MinSize()
+		if minSize.Width+p.options[i].Size().Width > maxParamWidth {
+			maxParamWidth = minSize.Width + p.options[i].Size().Width
+		}
+		if max(minSize.Height, p.options[i].MinSize().Height) > maxParamHeight {
+			maxParamHeight = max(minSize.Height, p.options[i].MinSize().Height)
+		}
+	}
+	return fyne.NewSize(p.BaseWidget.MinSize().Width, maxParamHeight)
 }
 
 func NewBoundParameterGrid(rowcol int, handler *data.ParameterHandler) *ParameterGrid {
