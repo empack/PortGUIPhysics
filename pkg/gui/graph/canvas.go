@@ -12,6 +12,7 @@ import (
 // GraphCanvas represents the graphical representation of a graph.
 type GraphCanvas struct {
 	widget.BaseWidget
+	pipelineCanvasAdapter
 	config     *GraphConfig
 	background *canvas.Rectangle
 

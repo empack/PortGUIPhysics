@@ -25,7 +25,9 @@ func (p Points) Sort() {
 // returns min and max X value of all points
 func (p Points) MinMaxX() (float64, float64) {
 	p.Sort()
-
+	if len(p) == 0 {
+		return 0, 0
+	}
 	return p[0].X, p[len(p)-1].X
 }
 

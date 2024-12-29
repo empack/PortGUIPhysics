@@ -1,7 +1,6 @@
 package transformation
 
 import (
-	"errors"
 	"sync"
 )
 
@@ -25,16 +24,15 @@ type PipelineSegment[T any, K any] interface {
 }
 
 type BaseSegment[T any, K any] struct {
-	in  []T
-	wg  *sync.WaitGroup
-	out *K
+	In  []T
+	Wg  *sync.WaitGroup
+	Out *K
 }
 
 func (b *BaseSegment[T, K]) Setup(in []T, wg *sync.WaitGroup, out *K) {
-	b.in, b.out, b.wg = in, out, wg
+	b.In, b.Out, b.Wg = in, out, wg
 }
 
 func (b *BaseSegment[T, K]) Start(_ int) {
-	b.wg.Done()
-	println(errors.New("forgot to override transformation.BaseSegment Start(i int) with own implement").Error())
+	b.Wg.Done()
 }

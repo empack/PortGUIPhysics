@@ -10,9 +10,11 @@ import (
 	"path/filepath"
 	"physicsGUI/pkg/data"
 	dataio "physicsGUI/pkg/data/io"
+	"physicsGUI/pkg/data/transformation"
 	"physicsGUI/pkg/function"
 	"physicsGUI/pkg/gui/graph"
 	"physicsGUI/pkg/gui/parameter/parameter_panel"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -197,16 +199,21 @@ func AddMainWindow() {
 	for _, param := range data.StartUpParameters {
 		parameterHandler.Add(param)
 	}
-	edensitys := parameterHandler.GetByClass("Eden")
-	d := parameterHandler.GetByClass("Thickness")
-	sigma := parameterHandler.GetByClass("Roughness")
-	sldFunction := function.NewSLDFunction(edensitys, d, sigma, 150)
-
 	sldGraph := graph.NewGraphCanvas(&graph.GraphConfig{
 		Resolution: 5,
 		Title:      "Electron Density",
-		Function:   &sldFunction.Function,
+		Function:   function.NewFunction(function.Points{}, function.INTERPOLATION_NONE),
 	})
+
+	transformationPipeline := transformation.NewBasicAsyncPipeline[*data.ParameterHandler, function.Function]()
+	sldFunctionGen := transformation.NewStage(&function.NewSLDFunction(nil, nil, nil, 150).BaseSegment)
+	transformationPipeline.AddStage(sldFunctionGen)
+	sldPlot := transformation.NewStage(&sldGraph.BaseSegment)
+	transformationPipeline.AddStage(sldPlot)
+
+	updater := NewScreenUpdater(transformationPipeline)
+	updater.Loop(100 * time.Millisecond)
+	updater.SetData([]*data.ParameterHandler{parameterHandler})
 
 	/* profilePanel.OnValueChanged = func() {
 		edensity := make([]float64, len(profilePanel.Profiles)+2)

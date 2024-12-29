@@ -77,16 +77,25 @@ func (p *BasicAsyncPipeline[T, K]) Start() {
 		in[i] = p.input[i]
 	}
 
-	for i := 0; i < len(p.output); i++ {
+	for i := 0; i < len(p.stages); i++ {
 		p.stages[i].Set(in)
 		p.stages[i].Start()
 		in = p.stages[i].Get()
 	}
 	p.output = make([]K, len(in))
 	for i := 0; i < len(p.output); i++ {
-		p.output[i] = in[i]
+		p.output[i] = in[i].(K)
 	}
 }
 func (p *BasicAsyncPipeline[T, K]) Get() []K {
 	return p.output
+}
+
+func (p *BasicAsyncPipeline[T, K]) AddStage(stage PipelineStage) {
+	p.stages = append(p.stages, stage)
+}
+func (p *BasicAsyncPipeline[T, K]) RemoveStage(stage PipelineStage) {
+	if i := slices.Index(p.stages, stage); i != -1 {
+		p.stages = append(p.stages[:i], p.stages[i+1:]...)
+	}
 }
