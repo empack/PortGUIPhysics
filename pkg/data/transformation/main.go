@@ -11,7 +11,7 @@ type PipelineSegment[T any, K any] interface {
 	// - in all outputs from the previous stage (read only)
 	// - wg to keep track of all Parallel Segment states
 	// - out pointer to the array element for output
-	Setup(in []T, wg *sync.WaitGroup, out *K)
+	Setup(in []T, wg *sync.WaitGroup, out []K)
 
 	// Start will be called parallel with the start function in all other Segment's in this Stage.
 	//
@@ -26,10 +26,10 @@ type PipelineSegment[T any, K any] interface {
 type BaseSegment[T any, K any] struct {
 	In  []T
 	Wg  *sync.WaitGroup
-	Out *K
+	Out []K
 }
 
-func (b *BaseSegment[T, K]) Setup(in []T, wg *sync.WaitGroup, out *K) {
+func (b *BaseSegment[T, K]) Setup(in []T, wg *sync.WaitGroup, out []K) {
 	b.In, b.Out, b.Wg = in, out, wg
 }
 

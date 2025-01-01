@@ -2,6 +2,7 @@ package graph
 
 import (
 	"image/color"
+	"physicsGUI/pkg/data/transformation"
 	"physicsGUI/pkg/function"
 
 	"fyne.io/fyne/v2"
@@ -12,7 +13,7 @@ import (
 // GraphCanvas represents the graphical representation of a graph.
 type GraphCanvas struct {
 	widget.BaseWidget
-	pipelineCanvasAdapter
+	transformation.BaseSegment[function.Function, function.Function]
 	config     *GraphConfig
 	background *canvas.Rectangle
 

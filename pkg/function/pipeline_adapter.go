@@ -5,13 +5,18 @@ import (
 	"physicsGUI/pkg/data/transformation"
 )
 
-type sldFunctionAdapter struct {
+type SldFunctionAdapter struct {
 	transformation.BaseSegment[*data.ParameterHandler, Function]
 }
 
-func (f *SldFunction) Start(i int) {
+func NewSldAdapter() *SldFunctionAdapter {
+	return &SldFunctionAdapter{}
+}
+
+func (f *SldFunctionAdapter) Start(i int) {
 	edensitys := f.In[i].GetByClass("Eden")
 	d := f.In[i].GetByClass("Thickness")
 	sigma := f.In[i].GetByClass("Roughness")
-	f.Out = &NewSLDFunction(edensitys, d, sigma, 150).Function
+	f.Out[i] = NewSLDFunction(edensitys, d, sigma, 150).Function
+	f.Wg.Done()
 }

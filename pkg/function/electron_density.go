@@ -9,7 +9,6 @@ import (
 
 type SldFunction struct {
 	Function
-	sldFunctionAdapter
 	eden    []*data.Parameter
 	d       []*data.Parameter
 	sigma   []*data.Parameter

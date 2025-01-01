@@ -206,14 +206,14 @@ func AddMainWindow() {
 	})
 
 	transformationPipeline := transformation.NewBasicAsyncPipeline[*data.ParameterHandler, function.Function]()
-	sldFunctionGen := transformation.NewStage(&function.NewSLDFunction(nil, nil, nil, 150).BaseSegment)
+	sldFunctionGen := transformation.NewStage[*data.ParameterHandler, function.Function](function.NewSldAdapter())
 	transformationPipeline.AddStage(sldFunctionGen)
-	sldPlot := transformation.NewStage(&sldGraph.BaseSegment)
+	sldPlot := transformation.NewStage[function.Function, function.Function](sldGraph)
 	transformationPipeline.AddStage(sldPlot)
 
 	updater := NewScreenUpdater(transformationPipeline)
 	updater.Loop(100 * time.Millisecond)
-	updater.SetData([]*data.ParameterHandler{parameterHandler})
+	updater.SetData([]*data.ParameterHandler{parameterHandler}) //TODO  set data again, when changed WIP-fix set updater dirty auf true
 
 	/* profilePanel.OnValueChanged = func() {
 		edensity := make([]float64, len(profilePanel.Profiles)+2)

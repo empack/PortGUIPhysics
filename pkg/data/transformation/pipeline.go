@@ -36,7 +36,7 @@ func (s *Stage[T, K]) Start() {
 	s.wg.Add(len(s.segments))
 	s.output = make([]K, len(s.segments))
 	for i, segment := range s.segments {
-		segment.Setup(s.input, &s.wg, &s.output[i])
+		segment.Setup(s.input, &s.wg, s.output)
 		go segment.Start(i)
 	}
 	s.wg.Wait()
