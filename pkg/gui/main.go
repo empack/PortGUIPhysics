@@ -201,7 +201,7 @@ func AddMainWindow() {
 	transformationPipeline := transformation.NewBasicAsyncPipeline[[]*data.Parameter, function.Function]()
 	// Set SldAdapter to handle transformation from []*data.Parameter to function.Function see function/pipeline_adapter.go
 	transformationPipeline.AddStage(transformation.NewStage[[]*data.Parameter, function.Function](function.NewSldAdapter()))
-	// Set SldAdapter to handle transformation from function.Function to function.Function (Graphs don't change the functions they just render it) see graph/pipeline_adapter.go
+	// Set GraphCanvas sldGraph to handle transformation from function.Function to function.Function (Graphs don't change the functions they just render it) see graph/pipeline_adapter.go
 	transformationPipeline.AddStage(transformation.NewStage[function.Function, function.Function](sldGraph))
 
 	// Setup Updater
