@@ -68,7 +68,7 @@ func (u *ScreenUpdater[T, K]) Loop(d time.Duration) {
 	}(u.timer, u.ticker)
 }
 
-func (u *ScreenUpdater[T, K]) SetData(in []T) {
+func (u *ScreenUpdater[T, K]) SetData(in ...T) {
 	u.mu.Lock()
 	u.dataIn = in
 	u.dirty = true

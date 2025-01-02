@@ -151,3 +151,12 @@ func (p *Parameter) BindLocked(newBinding binding.Bool) {
 	p.locked = newBinding
 	p.locked.AddListener(p.DataChannel)
 }
+
+// class system?
+
+func (p *Parameter) GetClass() ParameterClass {
+	return p.class
+}
+func (p *Parameter) GetID() ParameterID {
+	return p.uid
+}

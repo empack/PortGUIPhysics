@@ -13,6 +13,7 @@ import (
 	"physicsGUI/pkg/data/transformation"
 	"physicsGUI/pkg/function"
 	"physicsGUI/pkg/gui/graph"
+	"physicsGUI/pkg/gui/parameter"
 	"physicsGUI/pkg/gui/parameter/parameter_panel"
 	"time"
 
@@ -183,67 +184,32 @@ func AddMainWindow() {
 
 	GraphContainer.Add(g1)
 
-	/* dummyGraph := graph.NewGraphCanvas(&graph.GraphConfig{
-		Resolution: 100,
-		Title:      "Dummy Graph to load data later",
-		Function: function.NewFunction(function.Points{{
-			X:     0,
-			Y:     0,
-			Error: 0,
-		}}, function.INTERPOLATION_NONE),
-	})
-	GraphContainer.Add(dummyGraph) */
-
-	parameterHandler := data.NewParameterHandler()
-	profilePanel := parameter_panel.NewBoundParameterGrid(parameterHandler)
-	for _, param := range data.StartUpParameters {
-		parameterHandler.Add(param)
-	}
 	sldGraph := graph.NewGraphCanvas(&graph.GraphConfig{
 		Resolution: 5,
 		Title:      "Electron Density",
 		Function:   function.NewFunction(function.Points{}, function.INTERPOLATION_NONE),
 	})
 
-	transformationPipeline := transformation.NewBasicAsyncPipeline[*data.ParameterHandler, function.Function]()
-	sldFunctionGen := transformation.NewStage[*data.ParameterHandler, function.Function](function.NewSldAdapter())
-	transformationPipeline.AddStage(sldFunctionGen)
-	sldPlot := transformation.NewStage[function.Function, function.Function](sldGraph)
-	transformationPipeline.AddStage(sldPlot)
+	// Add all parameters to Parameter grid
+	profilePanel := parameter_panel.NewParameterGrid()
+	for _, param := range data.StartUpParameters {
+		profilePanel.Add(parameter.NewWrapper(param))
+	}
 
+	//// HOW TO USE EXAMPLE
+	// Define Data Manipulation Pipeline see data/transformation/pipeline.go
+	transformationPipeline := transformation.NewBasicAsyncPipeline[[]*data.Parameter, function.Function]()
+	// Set SldAdapter to handle transformation from []*data.Parameter to function.Function see function/pipeline_adapter.go
+	transformationPipeline.AddStage(transformation.NewStage[[]*data.Parameter, function.Function](function.NewSldAdapter()))
+	// Set SldAdapter to handle transformation from function.Function to function.Function (Graphs don't change the functions they just render it) see graph/pipeline_adapter.go
+	transformationPipeline.AddStage(transformation.NewStage[function.Function, function.Function](sldGraph))
+
+	// Setup Updater
 	updater := NewScreenUpdater(transformationPipeline)
+	// Start updater with 10 updates slots per seconds (updates will only be performed, when SetData was called before the update slot)
 	updater.Loop(100 * time.Millisecond)
-	updater.SetData([]*data.ParameterHandler{parameterHandler}) //TODO  set data again, when changed WIP-fix set updater dirty auf true
-
-	/* profilePanel.OnValueChanged = func() {
-		edensity := make([]float64, len(profilePanel.Profiles)+2)
-		sigma := make([]float64, len(profilePanel.Profiles)+1)
-		d := make([]float64, len(profilePanel.Profiles))
-
-		var err error = nil
-		edensity[0], err = profilePanel.base.Parameter[ProfileDefaultEdensityID].GetValue()
-		sigma[0], err = profilePanel.base.Parameter[ProfileDefaultRoughnessID].GetValue()
-		edensity[len(profilePanel.Profiles)+1], err = profilePanel.bulk.Parameter[ProfileDefaultEdensityID].GetValue()
-		for i, profile := range profilePanel.Profiles {
-			edensity[i+1], err = profile.Parameter[ProfileDefaultEdensityID].GetValue()
-			sigma[i+1], err = profile.Parameter[ProfileDefaultRoughnessID].GetValue()
-			d[i], err = profile.Parameter[ProfileDefaultThicknessID].GetValue()
-		}
-		var zNumberF float64 = 100.0
-		zNumberF, err = profilePanel.sldSettings.Parameter[SldDefaultZNumberID].GetValue()
-		zNumber := int(zNumberF)
-
-		if err != nil {
-			println(errors.Join(errors.New("error while reading default parameters"), err).Error())
-		}
-
-		newEdensity := data.NewOldSLDFunction(edensity, d, sigma, zNumber)
-		if newEdensity == nil {
-			println(errors.New("no old getEden function implemented for this parameter count").Error())
-			return
-		}
-		sldGraph.UpdateFunction(newEdensity)
-	} */
+	// Update the data (The parameter will be the input for the first stage in the transformationPipeline)
+	updater.SetData(data.StartUpParameters) //TODO set data again, when changed WIP-fix set updater dirty auf true use listener on parameter fields
 
 	content := container.NewBorder(
 		topContainer, // top
