@@ -39,5 +39,5 @@ type GraphConfig struct {
 	Title      string
 	IsLog      bool
 	Resolution int
-	Function   *function.Function
+	Functions  []*function.Function
 }

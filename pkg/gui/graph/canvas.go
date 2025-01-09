@@ -15,7 +15,7 @@ type GraphCanvas struct {
 	config     *GraphConfig
 	background *canvas.Rectangle
 
-	function *function.Function
+	functions []*function.Function
 }
 
 // NewGraphCanvas creates a new canvas instance with a provided config.
@@ -26,7 +26,7 @@ func NewGraphCanvas(config *GraphConfig) *GraphCanvas {
 		config:     config,
 		background: canvas.NewRectangle(color.Black),
 
-		function: config.Function,
+		functions: config.Functions,
 	}
 
 	// needs to be to cross reference with the underlying struct
@@ -46,7 +46,7 @@ func (g *GraphCanvas) CreateRenderer() fyne.WidgetRenderer {
 }
 
 // UpdateFunction updates the function and refreshes the [GraphCanvas]
-func (g *GraphCanvas) UpdateFunction(newFunction *function.Function) {
-	g.function = newFunction
+func (g *GraphCanvas) UpdateFunction(newFunctions []*function.Function) {
+	g.functions = newFunctions
 	g.Refresh()
 }

@@ -107,7 +107,7 @@ func createImportButton(window fyne.Window) *widget.Button {
 				IsLog: false,
 				//MinValue:   minP.X,
 				Resolution: 200,
-				Function:   function.NewFunction(points, function.INTERPOLATION_NONE),
+				Functions:  []*function.Function{function.NewFunction(points, function.INTERPOLATION_NONE)},
 			})
 
 			GraphContainer.Add(plot)
@@ -159,7 +159,7 @@ func AddMainWindow() {
 		separator,
 	)
 
-	// create dataset 2^x
+	// create dataset x^3
 	dataset := make(function.Points, 21)
 	for i := 0; i < len(dataset); i++ {
 		dataset[i] = &function.Point{
@@ -170,15 +170,15 @@ func AddMainWindow() {
 	}
 
 	g1 := graph.NewGraphCanvas(&graph.GraphConfig{
-		Title:    "Non Logarithmic x³",
-		IsLog:    false,
-		Function: function.NewFunction(dataset, function.INTERPOLATION_NONE),
+		Title:     "Non Logarithmic x³",
+		IsLog:     false,
+		Functions: []*function.Function{function.NewFunction(dataset, function.INTERPOLATION_NONE)},
 	})
 
 	g2 := graph.NewGraphCanvas(&graph.GraphConfig{
-		Title:    "Logarithmic x³",
-		IsLog:    true,
-		Function: function.NewFunction(dataset, function.INTERPOLATION_NONE),
+		Title:     "Logarithmic x³",
+		IsLog:     true,
+		Functions: []*function.Function{function.NewFunction(dataset, function.INTERPOLATION_NONE)},
 	})
 
 	GraphContainer.Add(g1)
@@ -195,7 +195,7 @@ func AddMainWindow() {
 	sldGraph := graph.NewGraphCanvas(&graph.GraphConfig{
 		Resolution: 5,
 		Title:      "Electron Density",
-		Function:   dummyFunction,
+		Functions:  []*function.Function{dummyFunction},
 	})
 
 	/* dummyGraph := graph.NewGraphCanvas(&graph.GraphConfig{
