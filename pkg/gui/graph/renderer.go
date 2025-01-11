@@ -97,6 +97,10 @@ func (r *GraphRenderer) Layout(size fyne.Size) {
 		r.DrawGraphLinear(scope)
 		r.DrawGridLinear(scope)
 	}
+	// Import button
+	r.graph.btnImportData.Resize(fyne.NewSize(20, 20))
+	r.graph.btnImportData.Move(fyne.NewPos(r.size.Width-r.graph.btnImportData.Size().Width, 0))
+	r.AddObject(r.graph.btnImportData)
 }
 
 // draw a linear graph

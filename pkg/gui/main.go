@@ -1,14 +1,10 @@
 package gui
 
 import (
-	"errors"
-	"fmt"
 	"image/color"
-	"io"
-	"log"
 	"math"
-	"path/filepath"
 	"physicsGUI/pkg/data"
+	"physicsGUI/pkg/dataDump"
 	"physicsGUI/pkg/function"
 	"physicsGUI/pkg/gui/parameter"
 	"physicsGUI/pkg/gui/parameter/parameter_panel"
@@ -18,108 +14,29 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
 var (
 	// App reference
 	App        fyne.App
-	MainWindow fyne.Window
+	MainWindow = dataDump.MainWindow
 )
 
 // Start GUI (function is blocking)
 func Start() {
 	App = app.NewWithID("GUI-Physics")
-	MainWindow = App.NewWindow("Physics GUI")
+	dataDump.MainWindow = App.NewWindow("Physics GUI")
 
 	AddMainWindow()
+	App.Quit()
 }
 
 func createImportButton(window fyne.Window) *widget.Button {
 	return widget.NewButton("Import Data", func() {
 
 		// open dialog
-		dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
-			if err != nil {
-				dialog.ShowError(err, window)
-				return
-			}
-			if reader == nil {
-				return // user canceled
-			}
-			defer func() {
-				if err := reader.Close(); err != nil {
-					log.Println("error while closing dialog:", err)
-				}
-			}()
-
-			// read file
-			bytes, err := io.ReadAll(reader)
-			if err != nil {
-				dialog.ShowError(err, window)
-				return
-			}
-
-			// get filename
-			filename := filepath.Base(reader.URI().Path())
-
-			// handle import
-			measurements, err := data.Parse(bytes)
-			if err != nil {
-				dialog.ShowError(err, window)
-				return
-			}
-
-			if len(measurements) == 0 {
-				dialog.ShowError(errors.New("no data"), window)
-				return
-			}
-
-			points := make(function.Points, len(measurements))
-			for i, m := range measurements {
-				points[i] = m.ToPoint()
-			}
-
-			// convert to Point format
-			/* points := make([][]function.Point, measurements[0].Count)
-			for j, m := range measurements {
-				for i := 0; i < measurements[j].Count; i++ {
-					if j == 0 {
-						points[i] = make([]function.Point, len(measurements))
-					}
-					points[i][j] = function.Point{
-						X:     m.Time,
-						Y:     m.Data[i],
-						Error: m.Error,
-					}
-				}
-			} */
-
-			//minP, _ := plotFunc.Scope()
-
-			// Clear old plots and add new
-			/* GraphContainer.RemoveAll()
-			for i := 0; i < len(points); i++ {
-				plotFunc := function.NewDataFunction(points, function.INTERPOLATION_NONE)
-				minP, _ := plotFunc.Scope()
-				plot := NewGraphCanvas(&GraphConfig{
-					Title:      fmt.Sprintf("Data track %d", i+1),
-					IsLog:      false,
-					MinValue:   minP.X,
-					Resolution: 200,
-					Function:   plotFunc,
-				})
-
-				GraphContainer.Add(plot)
-			}
-			GraphContainer.Refresh() */
-
-			// show success message
-			dialog.ShowInformation("Import successful",
-				fmt.Sprintf("File '%s' imported", filename),
-				window)
-		}, window)
+		println("Import Data is out of function")
 	})
 }
 
@@ -229,21 +146,19 @@ func AddMainWindow() {
 		),
 	)
 
-	MainWindow.Resize(fyne.NewSize(1000, 500))
-	MainWindow.SetContent(content)
+	dataDump.MainWindow.Resize(fyne.NewSize(1000, 500))
+	dataDump.MainWindow.SetContent(content)
 
-	MainWindow.ShowAndRun()
+	dataDump.MainWindow.ShowAndRun()
 }
 
 func Looper(tickChannel <-chan time.Time) {
 	for {
 		select {
 		case <-tickChannel:
-			plotUpdate := &data.PlotUpdate{
-				Plots: make([]function.Points, len(Graphs)),
+			for _, graph := range Graphs {
+				graph.ReCalculate()
 			}
-			data.DefineFunctions(plotUpdate)
-			data.DefinePlot(Graphs, plotUpdate.Plots)
 		}
 	}
 }

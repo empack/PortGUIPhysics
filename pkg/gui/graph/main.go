@@ -36,8 +36,9 @@ var (
 
 // GraphConfig configures the basic struct for a graph
 type GraphConfig struct {
-	Title      string
-	IsLog      bool
-	Resolution int
-	Functions  []*function.Function
+	Title       string
+	IsLog       bool
+	Resolution  int
+	Functions   []*function.Function
+	Calculation []func() function.Points
 }

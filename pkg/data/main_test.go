@@ -3,6 +3,7 @@ package data
 import (
 	"os"
 	"path"
+	"physicsGUI/pkg/io"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
@@ -52,7 +53,7 @@ func TestOldImport(t *testing.T) {
 		t.Error(err)
 	}
 
-	parser := OldParser()
+	parser := io.OldParser()
 	data, err := parser.tryParse(fileContent)
 	if err != nil {
 		t.Error(err)

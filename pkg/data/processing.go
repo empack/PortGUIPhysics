@@ -7,18 +7,18 @@ import (
 )
 
 const r_e = 2.81e-5 // classical electron radius in angstrom
-const zNumber = 150
+const ZNumber = 150
 
 type ifunctions struct {
-	get_zaxis    func(d []float64, zNumber int) []float64
-	getValues    func(p ...*Parameter) []float64
-	getEden      func(eden []*Parameter, d []*Parameter, sigma []*Parameter, zNumber int) function.Points
-	getIntensity func(qzaxis []float64, sld function.Points, deltaz *Parameter, background *Parameter, scaling *Parameter) function.Points
+	Get_zaxis    func(d []float64, zNumber int) []float64
+	GetValues    func(p ...*Parameter) []float64
+	GetEden      func(eden []*Parameter, d []*Parameter, sigma []*Parameter, zNumber int) function.Points
+	GetIntensity func(qzaxis []float64, sld function.Points, deltaz *Parameter, background *Parameter, scaling *Parameter) function.Points
 }
 
-var helper = ifunctions{
-	get_zaxis: get_zaxis,
-	getValues: func(p ...*Parameter) []float64 {
+var Helper = ifunctions{
+	Get_zaxis: get_zaxis,
+	GetValues: func(p ...*Parameter) []float64 {
 		res := make([]float64, len(p))
 		for i := range res {
 			if v, err := p[i].Val.Get(); err == nil {
@@ -29,7 +29,7 @@ var helper = ifunctions{
 		}
 		return res
 	},
-	getEden: func(eden []*Parameter, d []*Parameter, sigma []*Parameter, zNumber int) function.Points {
+	GetEden: func(eden []*Parameter, d []*Parameter, sigma []*Parameter, zNumber int) function.Points {
 		edenv := make([]float64, len(eden))
 		dv := make([]float64, len(d))
 		sigmav := make([]float64, len(sigma))
@@ -59,7 +59,7 @@ var helper = ifunctions{
 		}
 		panic("Eden Wrapper crashed")
 	},
-	getIntensity: func(qzaxis []float64, sld function.Points, deltaz *Parameter, background *Parameter, scaling *Parameter) function.Points {
+	GetIntensity: func(qzaxis []float64, sld function.Points, deltaz *Parameter, background *Parameter, scaling *Parameter) function.Points {
 		deltazv, err := deltaz.Val.Get()
 		if err != nil {
 			panic(err)
@@ -96,19 +96,6 @@ var helper = ifunctions{
 
 type PlotUpdate struct {
 	Plots []function.Points
-}
-
-func DefineFunctions(plotUpdate *PlotUpdate) {
-	eden := helper.getEden(
-		[]*Parameter{&ParameterList[0], &ParameterList[1], &ParameterList[2], &ParameterList[3]},
-		[]*Parameter{&ParameterList[7], &ParameterList[8]},
-		[]*Parameter{&ParameterList[4], &ParameterList[5], &ParameterList[6]},
-		zNumber)
-	qzaxis := helper.get_zaxis(helper.getValues(&ParameterList[7], &ParameterList[8]), zNumber)
-	intensity := helper.getIntensity(qzaxis, eden, &ParameterList[9], &ParameterList[10], &ParameterList[11])
-
-	plotUpdate.Plots[0] = eden
-	plotUpdate.Plots[1] = intensity
 }
 
 func DefinePlot(graphs []*graph.GraphCanvas, plotPoints []function.Points) {
