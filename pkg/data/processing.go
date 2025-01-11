@@ -2,7 +2,6 @@ package data
 
 import (
 	"physicsGUI/pkg/function"
-	"physicsGUI/pkg/gui/graph"
 	mod_intensity "physicsGUI/pkg/physics/intensity"
 )
 
@@ -96,9 +95,4 @@ var Helper = ifunctions{
 
 type PlotUpdate struct {
 	Plots []function.Points
-}
-
-func DefinePlot(graphs []*graph.GraphCanvas, plotPoints []function.Points) {
-	graphs[0].UpdateFunction([]*function.Function{function.NewFunction(plotPoints[0], function.INTERPOLATION_NONE)})
-	graphs[1].UpdateFunction([]*function.Function{function.NewFunction(plotPoints[1], function.INTERPOLATION_NONE)})
 }

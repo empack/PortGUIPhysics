@@ -2,7 +2,7 @@ package graph
 
 import (
 	"image/color"
-	"physicsGUI/pkg/function"
+	"physicsGUI/pkg/calculation"
 )
 
 var (
@@ -39,6 +39,5 @@ type GraphConfig struct {
 	Title       string
 	IsLog       bool
 	Resolution  int
-	Functions   []*function.Function
-	Calculation []func() function.Points
+	Calculation calculation.Calculation
 }

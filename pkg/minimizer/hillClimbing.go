@@ -36,7 +36,7 @@ func (h *hillClimbingMinimizer) Minimize(errFunc func([]float64) float64, x0 []f
 			bestEval = valBuff
 			bestNode = currentNode
 		}
-		L := permutations(currentNode, asymptoteGrowRate(float64(i)/float64(maxIterations), 10*minDelta, minDelta))
+		L := permutations(currentNode, asymptoteGrowRate(float64(i)/float64(maxIterations), 100*minDelta, minDelta))
 		tempMaxEval := math.Inf(-1)
 		for _, x := range L {
 			tmpValBuff := -errFunc(x)

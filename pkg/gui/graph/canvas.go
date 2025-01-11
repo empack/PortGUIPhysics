@@ -11,9 +11,11 @@ import (
 	"io"
 	"log"
 	"path/filepath"
+	"physicsGUI/pkg/data"
 	"physicsGUI/pkg/dataDump"
 	"physicsGUI/pkg/function"
 	mod_io "physicsGUI/pkg/io"
+	"physicsGUI/pkg/minimizer"
 )
 
 // GraphCanvas represents the graphical representation of a graph.
@@ -22,7 +24,7 @@ type GraphCanvas struct {
 	config        *GraphConfig
 	background    *canvas.Rectangle
 	btnImportData *widget.Button
-	functions     []*function.Function
+	btnMinimize   *widget.Button
 }
 
 // NewGraphCanvas creates a new canvas instance with a provided config.
@@ -33,8 +35,31 @@ func NewGraphCanvas(config *GraphConfig) *GraphCanvas {
 		config:        config,
 		background:    canvas.NewRectangle(color.Black),
 		btnImportData: nil,
-		functions:     config.Functions,
+		btnMinimize:   nil,
 	}
+
+	g.btnMinimize = widget.NewButton("M", func() {
+		x0 := make([]float64, len(data.ParameterList))
+		for i := range data.ParameterList {
+			if v, err := data.ParameterList[i].Val.Get(); err == nil {
+				x0[i] = v
+			} else {
+				panic(err)
+			}
+		}
+		errorFunc := func(parameter []float64) float64 {
+			//TODO set parameter
+			return g.config.Calculation.Error(150)
+		}
+		minRes := minimizer.HillClimbingMinimizer.Minimize(errorFunc, x0, 1e9, 1e-6)
+		for i := range data.ParameterList {
+			err := data.ParameterList[i].Val.Set(minRes[i])
+			if err != nil {
+				panic(err)
+			}
+		}
+	})
+
 	g.btnImportData = widget.NewButton("📲", func() {
 		dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
 			if err != nil {
@@ -76,9 +101,9 @@ func NewGraphCanvas(config *GraphConfig) *GraphCanvas {
 			for i, m := range measurements {
 				points[i] = m.ToPoint()
 			}
-			g.config.Calculation = append(g.config.Calculation, func() function.Points {
+			g.config.Calculation.Provider = append([]func() function.Points{func() function.Points {
 				return points
-			})
+			}}, g.config.Calculation.Provider...)
 			g.ReCalculate()
 
 			// show success message
@@ -91,6 +116,7 @@ func NewGraphCanvas(config *GraphConfig) *GraphCanvas {
 
 	// needs to be to cross reference with the underlying struct
 	g.ExtendBaseWidget(g)
+	g.ReCalculate()
 
 	return g
 }
@@ -105,16 +131,8 @@ func (g *GraphCanvas) CreateRenderer() fyne.WidgetRenderer {
 	}
 }
 
-// UpdateFunction updates the function and refreshes the [GraphCanvas]
-func (g *GraphCanvas) UpdateFunction(newFunctions []*function.Function) {
-	g.functions = newFunctions
-	g.Refresh()
-}
-
+// ReCalculate updates the function and refreshes the [GraphCanvas]
 func (r *GraphCanvas) ReCalculate() {
-	functions := make([]*function.Function, len(r.config.Calculation))
-	for i := range r.config.Calculation {
-		functions[i] = function.NewFunction(r.config.Calculation[i](), function.INTERPOLATION_NONE)
-	}
-	r.UpdateFunction(functions)
+	r.config.Calculation.ReCalculate()
+	r.Refresh()
 }

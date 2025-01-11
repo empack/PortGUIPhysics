@@ -82,7 +82,7 @@ func (r *GraphRenderer) Layout(size fyne.Size) {
 		MinY: 0,
 		MaxY: 0,
 	}
-	for _, function := range r.graph.functions {
+	for _, function := range r.graph.config.Calculation.Functions {
 		scope.MinX = min(scope.MinX, function.Scope.MinX)
 		scope.MinY = min(scope.MinY, function.Scope.MinY)
 		scope.MaxX = max(scope.MaxX, function.Scope.MaxX)
@@ -98,15 +98,18 @@ func (r *GraphRenderer) Layout(size fyne.Size) {
 		r.DrawGridLinear(scope)
 	}
 	// Import button
-	r.graph.btnImportData.Resize(fyne.NewSize(20, 20))
 	r.graph.btnImportData.Move(fyne.NewPos(r.size.Width-r.graph.btnImportData.Size().Width, 0))
 	r.AddObject(r.graph.btnImportData)
+
+	// minimize button
+	r.graph.btnMinimize.Move(fyne.NewPos(r.size.Width-r.graph.btnMinimize.Size().Width, 25))
+	r.AddObject(r.graph.btnMinimize)
 }
 
 // draw a linear graph
 func (r *GraphRenderer) DrawGraphLinear(scope function_mod.Scope) {
-	for _, function := range r.graph.functions {
-		points, iPoints := function.Model(r.graph.config.Resolution, false)
+	for _, function := range r.graph.config.Calculation.Functions {
+		points, iPoints := function.Model(r.graph.config.Resolution)
 
 		// calc available space
 		availableWidth := r.size.Width - (1.5 * r.margin)
@@ -166,8 +169,8 @@ func (r *GraphRenderer) DrawGraphLinear(scope function_mod.Scope) {
 
 // draw the graph in logarithmic scale
 func (r *GraphRenderer) DrawGraphLog(scope function_mod.Scope) {
-	for _, function := range r.graph.functions {
-		points, iPoints := function.Model(r.graph.config.Resolution, true)
+	for _, function := range r.graph.config.Calculation.Functions {
+		points, iPoints := function.Model(r.graph.config.Resolution)
 
 		// calc available space
 		availableWidth := r.size.Width - (1.5 * r.margin)

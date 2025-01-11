@@ -48,7 +48,7 @@ func NewFunction(data Points, interpolationMode InterpolationMode) *Function {
 }
 
 // TODO: add full explanation
-func (f *Function) Model(resolution int, isLog bool) (Points, Points) {
+func (f *Function) Model(resolution int) (Points, Points) {
 	if f.eval == nil {
 		return f.data, f.data
 	}

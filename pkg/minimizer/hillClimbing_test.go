@@ -10,7 +10,7 @@ func testFunc(in []float64) float64 {
 	return -1 / (in[0]*in[0] + in[1]*in[1])
 }
 func TestHillClimb2DMinimizer(t *testing.T) {
-	minStepSize := 1e-7
+	minStepSize := 1e-8
 	x0 := []float64{4, 4}
 	minimizer := HillClimbingMinimizer
 	res := minimizer.Minimize(testFunc, x0, 1e7, minStepSize)
