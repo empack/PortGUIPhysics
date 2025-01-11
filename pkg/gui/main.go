@@ -207,7 +207,7 @@ func AddMainWindow() {
 	})
 	GraphContainer.Add(dummyGraph) */
 
-	profilePanel := parameter_panel.NewParameterGrid(3)
+	profilePanel := parameter_panel.NewParameterGrid()
 	for i := range data.ParameterList {
 		profilePanel.Add(parameter.NewParameter(
 			data.ParameterList[i].Name,

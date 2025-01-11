@@ -4,13 +4,14 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"physicsGUI/pkg/gui/parameter"
+	mod_parameter "physicsGUI/pkg/gui/parameter"
 	"slices"
 )
 
 type ParameterGridRenderer struct {
 	fyne.WidgetRenderer
-	impl *ParameterGrid
+	impl   *ParameterGrid
+	cntPnl *container.Scroll
 }
 
 func NewParameterGridRenderer(impl *ParameterGrid) *ParameterGridRenderer {
@@ -20,14 +21,25 @@ func NewParameterGridRenderer(impl *ParameterGrid) *ParameterGridRenderer {
 }
 
 func (r *ParameterGridRenderer) Update() {
-	cnt := container.NewAdaptiveGrid(r.impl.rowcol, r.impl.objects...)
-	r.WidgetRenderer = widget.NewSimpleRenderer(container.NewHScroll(cnt))
+	objects := make([]fyne.CanvasObject, len(r.impl.objects))
+	for i, _ := range r.impl.objects {
+		objects[i] = container.NewHBox(r.impl.objects[i], r.impl.options[i])
+	}
+	cnt := container.NewAdaptiveGrid(r.impl.rowcol, objects...)
+	oldOffset := fyne.NewPos(0, 0)
+	if r.cntPnl != nil {
+		oldOffset = r.cntPnl.Offset
+	}
+	r.cntPnl = container.NewScroll(cnt)
+	r.cntPnl.Offset = oldOffset
+	r.WidgetRenderer = widget.NewSimpleRenderer(r.cntPnl)
 	r.WidgetRenderer.Layout(r.impl.Size())
 }
 
 type ParameterGrid struct {
 	widget.BaseWidget
-	objects  []fyne.CanvasObject
+	objects  []*mod_parameter.Parameter
+	options  []fyne.CanvasObject
 	rowcol   int
 	renderer *ParameterGridRenderer
 }
@@ -38,26 +50,46 @@ func (p *ParameterGrid) CreateRenderer() fyne.WidgetRenderer {
 }
 func (p *ParameterGrid) Resize(size fyne.Size) {
 	var maxParamWidth float32 = 0.1 // not 0.0 to prevent div by zero exception
-	for _, c := range p.objects {
+	for i, c := range p.objects {
 		minSize := c.MinSize()
-		if minSize.Width > maxParamWidth {
-			maxParamWidth = minSize.Width
+		if minSize.Width+p.options[i].Size().Width > maxParamWidth {
+			maxParamWidth = minSize.Width + p.options[i].Size().Width
 		}
 	}
 	p.rowcol = int(size.Width / maxParamWidth)
-	p.renderer.Update()
+	if p.objects == nil || len(p.objects) == 0 {
+		p.rowcol = 1
+	}
+	if p.renderer != nil {
+		p.renderer.Update()
+	}
 	p.BaseWidget.Resize(size)
 }
 
-func NewParameterGrid(rowcol int, parameter ...*parameter.Parameter) *ParameterGrid {
-	objects := make([]fyne.CanvasObject, len(parameter))
+func (p *ParameterGrid) MinSize() fyne.Size {
+	var maxParamWidth float32 = 0.1 // not 0.0 to prevent div by zero exception
+	var maxParamHeight float32 = 0.0
+	for i, c := range p.objects {
+		minSize := c.MinSize()
+		if minSize.Width+p.options[i].Size().Width > maxParamWidth {
+			maxParamWidth = minSize.Width + p.options[i].Size().Width
+		}
+		if max(minSize.Height, p.options[i].MinSize().Height) > maxParamHeight {
+			maxParamHeight = max(minSize.Height, p.options[i].MinSize().Height)
+		}
+	}
+	return fyne.NewSize(p.BaseWidget.MinSize().Width, maxParamHeight)
+}
+
+func NewParameterGrid(params ...*mod_parameter.Parameter) *ParameterGrid {
+	objects := make([]fyne.CanvasObject, len(params))
 	for i := 0; i < len(objects); i++ {
-		objects[i] = parameter[i]
+		objects[i] = params[i]
 	}
 	g := &ParameterGrid{
 		BaseWidget: widget.BaseWidget{},
-		objects:    objects,
-		rowcol:     rowcol,
+		objects:    params,
+		rowcol:     1,
 	}
 	g.ExtendBaseWidget(g)
 	return g
@@ -70,17 +102,25 @@ func (p *ParameterGrid) SetRowCols(rowcols int) {
 	}
 }
 
-func (p *ParameterGrid) Add(parameter *parameter.Parameter) {
+func (p *ParameterGrid) Add(parameter *mod_parameter.Parameter) {
 	p.objects = append(p.objects, parameter)
+
+	p.options = append(p.options, container.NewStack())
+	/* Disabled remove button
+	p.options = append(p.options, container.NewVBox(widget.NewButton("R", func() {
+		p.Remove(parameter)
+	})))
+	*/
 	if p.renderer != nil {
 		p.renderer.Update()
 	}
 }
 
-func (p *ParameterGrid) Remove(parameter *parameter.Parameter) {
-	index := slices.Index(p.objects, fyne.CanvasObject(parameter))
+func (p *ParameterGrid) Remove(parameter *mod_parameter.Parameter) {
+	index := slices.Index(p.objects, parameter)
 	if index != -1 {
 		p.objects = append(p.objects[:index], p.objects[index+1:]...)
+		p.options = append(p.options[:index], p.options[index+1:]...)
 	}
 	if p.renderer != nil {
 		p.renderer.Update()
