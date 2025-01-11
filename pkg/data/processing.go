@@ -2,6 +2,7 @@ package data
 
 import (
 	"physicsGUI/pkg/function"
+	"physicsGUI/pkg/gui/graph"
 	mod_intensity "physicsGUI/pkg/physics/intensity"
 )
 
@@ -15,7 +16,7 @@ type ifunctions struct {
 	getIntensity func(qzaxis []float64, sld function.Points, deltaz *Parameter, background *Parameter, scaling *Parameter) function.Points
 }
 
-var functions = ifunctions{
+var helper = ifunctions{
 	get_zaxis: get_zaxis,
 	getValues: func(p ...*Parameter) []float64 {
 		res := make([]float64, len(p))
@@ -94,18 +95,23 @@ var functions = ifunctions{
 }
 
 type PlotUpdate struct {
-	plots []function.Points
+	Plots []function.Points
 }
 
-func defineFunctions(plotUpdate *PlotUpdate) {
-	eden := functions.getEden(
+func DefineFunctions(plotUpdate *PlotUpdate) {
+	eden := helper.getEden(
 		[]*Parameter{&ParameterList[0], &ParameterList[1], &ParameterList[2], &ParameterList[3]},
 		[]*Parameter{&ParameterList[7], &ParameterList[8]},
 		[]*Parameter{&ParameterList[4], &ParameterList[5], &ParameterList[6]},
 		zNumber)
-	qzaxis := functions.get_zaxis(functions.getValues(&ParameterList[7], &ParameterList[8]), zNumber)
-	intensity := functions.getIntensity(qzaxis, eden, &ParameterList[9], &ParameterList[10], &ParameterList[11])
+	qzaxis := helper.get_zaxis(helper.getValues(&ParameterList[7], &ParameterList[8]), zNumber)
+	intensity := helper.getIntensity(qzaxis, eden, &ParameterList[9], &ParameterList[10], &ParameterList[11])
 
-	plotUpdate.plots[0] = eden
-	plotUpdate.plots[1] = intensity
+	plotUpdate.Plots[0] = eden
+	plotUpdate.Plots[1] = intensity
+}
+
+func DefinePlot(graphs []*graph.GraphCanvas, plotPoints []function.Points) {
+	graphs[0].UpdateFunction([]*function.Function{function.NewFunction(plotPoints[0], function.INTERPOLATION_NONE)})
+	graphs[1].UpdateFunction([]*function.Function{function.NewFunction(plotPoints[1], function.INTERPOLATION_NONE)})
 }

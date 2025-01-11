@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"physicsGUI/pkg/data"
 	"physicsGUI/pkg/function"
-	"physicsGUI/pkg/gui/graph"
 	"physicsGUI/pkg/gui/parameter"
 	"physicsGUI/pkg/gui/parameter/parameter_panel"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -24,16 +24,14 @@ import (
 
 var (
 	// App reference
-	App            fyne.App
-	MainWindow     fyne.Window
-	GraphContainer *fyne.Container
+	App        fyne.App
+	MainWindow fyne.Window
 )
 
 // Start GUI (function is blocking)
 func Start() {
 	App = app.NewWithID("GUI-Physics")
 	MainWindow = App.NewWindow("Physics GUI")
-	GraphContainer = container.NewVBox()
 
 	AddMainWindow()
 }
@@ -98,17 +96,8 @@ func createImportButton(window fyne.Window) *widget.Button {
 				}
 			} */
 
-			GraphContainer.RemoveAll()
 			//minP, _ := plotFunc.Scope()
-			plot := graph.NewGraphCanvas(&graph.GraphConfig{
-				Title: fmt.Sprintf("Data track %d", 1),
-				IsLog: false,
-				//MinValue:   minP.X,
-				Resolution: 200,
-				Functions:  []*function.Function{function.NewFunction(points, function.INTERPOLATION_NONE)},
-			})
 
-			GraphContainer.Add(plot)
 			// Clear old plots and add new
 			/* GraphContainer.RemoveAll()
 			for i := 0; i < len(points); i++ {
@@ -167,35 +156,6 @@ func AddMainWindow() {
 		}
 	}
 
-	g1 := graph.NewGraphCanvas(&graph.GraphConfig{
-		Title:     "Non Logarithmic x³",
-		IsLog:     false,
-		Functions: []*function.Function{function.NewFunction(dataset, function.INTERPOLATION_NONE)},
-	})
-
-	g2 := graph.NewGraphCanvas(&graph.GraphConfig{
-		Title:     "Logarithmic x³",
-		IsLog:     true,
-		Functions: []*function.Function{function.NewFunction(dataset, function.INTERPOLATION_NONE)},
-	})
-
-	GraphContainer.Add(g1)
-
-	// from refl_monolayer.pro:780
-	dummyFunction := data.NewOldSLDFunction(
-		[]float64{0.0, 0.346197, 0.458849, 0.334000},
-		[]float64{14.2657, 10.6906},
-		[]float64{3.39544, 2.15980, 3.90204},
-		150)
-
-	dummyFunction.SetInterpolation(function.INTERPOLATION_LINEAR)
-
-	sldGraph := graph.NewGraphCanvas(&graph.GraphConfig{
-		Resolution: 5,
-		Title:      "Electron Density",
-		Functions:  []*function.Function{dummyFunction},
-	})
-
 	/* dummyGraph := graph.NewGraphCanvas(&graph.GraphConfig{
 		Resolution: 100,
 		Title:      "Dummy Graph to load data later",
@@ -218,6 +178,9 @@ func AddMainWindow() {
 			data.ParameterList[i].Check,
 		))
 	}
+
+	tickChannel := time.Tick(100 * time.Millisecond)
+	go Looper(tickChannel)
 
 	/* profilePanel.OnValueChanged = func() {
 		edensity := make([]float64, len(profilePanel.Profiles)+2)
@@ -257,13 +220,11 @@ func AddMainWindow() {
 
 		container.NewHSplit(
 			container.NewVSplit(
-				sldGraph,
+				Graphs[0],
 				profilePanel,
 			),
 			/* container.NewVScroll( */
-			container.NewVSplit(
-				g1, g2,
-			),
+			Graphs[1],
 			/* ), */
 		),
 	)
@@ -272,4 +233,17 @@ func AddMainWindow() {
 	MainWindow.SetContent(content)
 
 	MainWindow.ShowAndRun()
+}
+
+func Looper(tickChannel <-chan time.Time) {
+	for {
+		select {
+		case <-tickChannel:
+			plotUpdate := &data.PlotUpdate{
+				Plots: make([]function.Points, len(Graphs)),
+			}
+			data.DefineFunctions(plotUpdate)
+			data.DefinePlot(Graphs, plotUpdate.Plots)
+		}
+	}
 }
