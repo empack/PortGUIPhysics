@@ -14,8 +14,6 @@ import (
 	"physicsGUI/pkg/gui/parameter"
 	"physicsGUI/pkg/gui/parameter/parameter_panel"
 
-	"fyne.io/fyne/v2/data/binding"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
@@ -209,38 +207,17 @@ func AddMainWindow() {
 	})
 	GraphContainer.Add(dummyGraph) */
 
-	parameterName := binding.NewString()
-	err := parameterName.Set("Temporary Parameter")
-	if err != nil {
-		log.Println("error setting parameter name:", err)
-	}
-
-	defaultVal := binding.NewFloat()
-	err = defaultVal.Set(10.04)
-	if err != nil {
-		log.Println("error setting default value:", err)
-	}
-	val := binding.NewFloat()
-	minV := binding.NewFloat()
-	err = minV.Set(-math.MaxFloat64)
-	if err != nil {
-		log.Println("error setting min value:", err)
-	}
-	maxV := binding.NewFloat()
-	err = maxV.Set(math.MaxFloat64)
-	if err != nil {
-		log.Println("error setting max value:", err)
-	}
-	checkV := binding.NewBool()
-	param := parameter.NewParameter(parameterName, defaultVal, val, minV, maxV, checkV)
-	param1 := parameter.NewParameter(parameterName, defaultVal, val, minV, maxV, checkV)
-	param2 := parameter.NewParameter(parameterName, defaultVal, val, minV, maxV, checkV)
-	param3 := parameter.NewParameter(parameterName, defaultVal, val, minV, maxV, checkV)
 	profilePanel := parameter_panel.NewParameterGrid(3)
-	profilePanel.Add(param)
-	profilePanel.Add(param1)
-	profilePanel.Add(param2)
-	profilePanel.Add(param3)
+	for i := range data.ParameterList {
+		profilePanel.Add(parameter.NewParameter(
+			data.ParameterList[i].Name,
+			data.ParameterList[i].DefaultVal,
+			data.ParameterList[i].Val,
+			data.ParameterList[i].Min,
+			data.ParameterList[i].Max,
+			data.ParameterList[i].Check,
+		))
+	}
 
 	/* profilePanel.OnValueChanged = func() {
 		edensity := make([]float64, len(profilePanel.Profiles)+2)
