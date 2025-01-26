@@ -2,6 +2,7 @@ package minimizer
 
 import (
 	"errors"
+	"physicsGUI/pkg/minimizer/genetic_minimizer"
 	"sync"
 )
 
@@ -20,6 +21,7 @@ type AsyncMinimiserProblem[T Number] struct {
 	lock          sync.RWMutex
 	config        *MinimiserConfig
 	parameter     []T
+	fixed         []bool
 	minima        []T
 	maxima        []T
 	errorFunction func(parameter []T) T
@@ -30,6 +32,7 @@ func NewProblem[T Number](x0, minima, maxima []T, errorFunction func(parameter [
 		lock:          sync.RWMutex{},
 		config:        config,
 		parameter:     x0,
+		fixed:         make([]bool, len(x0)),
 		minima:        minima,
 		maxima:        maxima,
 		errorFunction: errorFunction,
@@ -86,4 +89,22 @@ var (
 	FloatMinimizerHC       Minimizer[float64] = &hillClimbingMinimizer[float64]{minDelta: 1e-2}
 	FloatMinimizerStagedHC Minimizer[float64] = &stagedHillClimbingMinimizer[float64]{maxDelta: 1e-1, minDelta: 1e-10, stageCount: 10}
 	IntMinimizerHC         Minimizer[int64]   = &hillClimbingMinimizer[int64]{minDelta: 1}
+)
+
+var (
+	FloatMinimizerGen Minimizer[float64] = &GeneticMinimizer[float64]{
+		environment: genetic_minimizer.Environment[float64]{
+			MutationRate:       0.01,
+			MutationAmplifier:  1e-1,
+			PopulationSize:     1000,
+			WildcardCount:      5,
+			PrecursorCount:     5,
+			ParentCount:        2,
+			FitnessEvaluator:   nil,
+			CrossoverBehavior:  nil,
+			ParentSelection:    FitnessWeightedRandom[float64],
+			WildcardSelection:  RandomBottomRated[float64],
+			PrecursorSelection: TopRated[float64],
+		},
+	}
 )
