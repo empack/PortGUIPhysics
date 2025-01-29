@@ -58,3 +58,7 @@ func (dna *DNA[T]) GetCompletedSequence() []T {
 	}
 	return res
 }
+
+func (dna *DNA[T]) SetModifiableSequence(seq []T) {
+	dna.modifiableSequence = seq
+}
