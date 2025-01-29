@@ -10,7 +10,7 @@ type EvaluatedDNA[T Number] struct {
 	*DNA[T]
 }
 type FitnessEvaluator[T Number] func(dna *DNA[T]) float64
-type CrossoverBehavior[T Number] func(dna ...*DNA[T]) *DNA[T]
+type CrossoverBehavior[T Number] func(dna ...*DNA[T])
 type SelectionBehavior[T Number] func(evalDna *[]EvaluatedDNA[T], selectionCount int) []int
 
 type Environment[T Number] struct {

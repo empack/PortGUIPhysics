@@ -7,7 +7,7 @@ import (
 	"slices"
 )
 
-//// Some Default Implementations
+//// Some Default SelectionBehavior Implementations
 
 func FitnessWeightedRandom[T Number](evalDna *[]genetic_minimizer.EvaluatedDNA[T], selectionCount int) []int {
 	rate := float64(len(*evalDna))
@@ -50,6 +50,39 @@ func RandomBottomRated[T Number](evalDna *[]genetic_minimizer.EvaluatedDNA[T], s
 		}
 	}
 	return res
+}
+
+//// Some Default CrossoverBehavior Implementations
+
+func TwoParentSinglePointCrossover[T Number](dna ...*genetic_minimizer.DNA[T]) {
+	s1 := dna[0].GetModifiableSequence()
+	s2 := dna[1].GetModifiableSequence()
+	splitIndex := rand.IntN(len(s1))
+	s1a := s1[:splitIndex]
+	s2a := s2[splitIndex:]
+	s1b := s1[splitIndex:]
+	s2b := s2[:splitIndex]
+	dna[0].SetModifiableSequence(append(s1a, s2a...))
+	dna[1].SetModifiableSequence(append(s1b, s2b...))
+}
+
+func TwoParentTwoPointCrossover[T Number](dna ...*genetic_minimizer.DNA[T]) {
+	s1 := dna[0].GetModifiableSequence()
+	s2 := dna[1].GetModifiableSequence()
+	splitIndex1 := rand.IntN(len(s1))
+	splitIndex2 := rand.IntN(len(s1)-splitIndex1) + splitIndex1
+	s1a := s1[:splitIndex1]
+	s2a := s2[:splitIndex1]
+	s1b := s1[splitIndex1:splitIndex2]
+	s2b := s2[splitIndex1:splitIndex2]
+	s1c := s1[splitIndex2:]
+	s2c := s2[splitIndex2:]
+	dna[0].SetModifiableSequence(append(s1a, append(s2b, s1c...)...))
+	dna[1].SetModifiableSequence(append(s2a, append(s1b, s2c...)...))
+}
+
+func ThreeParentCrossover[T Number](dna ...*genetic_minimizer.DNA[T]) {
+
 }
 
 type GeneticMinimizer[T Number] struct {
