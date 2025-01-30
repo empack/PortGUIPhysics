@@ -2,6 +2,7 @@ package minimizer
 
 import (
 	"cmp"
+	"fmt"
 	"math/rand/v2"
 	"physicsGUI/pkg/minimizer/genetic_minimizer"
 	"slices"
@@ -178,9 +179,6 @@ func (g *GeneticMinimizer[T]) Minimize(problem *AsyncMinimiserProblem[T]) {
 		}
 		// copy last best in new generation
 		newGeneration[len(newGeneration)-1] = generation[0].Clone()
-		if generation[0].Fitness < dna0.Fitness {
-			println("Stupid Algorithems")
-		}
 
 		// apply mutations
 		for c := 0; c < len(newGeneration)-1; c++ {
@@ -193,10 +191,16 @@ func (g *GeneticMinimizer[T]) Minimize(problem *AsyncMinimiserProblem[T]) {
 		problem.parameter = generation[0].GetCompletedSequence()
 		problem.lock.Unlock()
 
-		// set new generation
-		generation = newGeneration
-		if i%100 == 0 {
+		if i%50 == 0 {
 			println("Completed generation ", i, " fitness: ", generation[0].Fitness)
 		}
+		if i == maxGenerationCount-1 {
+			println(fmt.Sprint(generation[0]))
+		}
+
+		// set new generation
+		generation = newGeneration
+
 	}
+
 }
