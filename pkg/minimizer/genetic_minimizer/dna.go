@@ -1,11 +1,13 @@
 package genetic_minimizer
 
 import (
+	"math"
 	"math/rand"
 	"slices"
 )
 
 type DNA[T Number] struct {
+	Fitness            float64
 	modifiableSequence []T
 	completedTemplate  []T
 	fixedMap           []bool
@@ -29,6 +31,7 @@ func NewDNA[T Number](gens []T, fixed []bool) *DNA[T] {
 		}
 	}
 	return &DNA[T]{
+		fitness:            math.NaN(),
 		modifiableSequence: modifiableSequence,
 		completedTemplate:  completedTemplate,
 		fixedMap:           fixedMap,

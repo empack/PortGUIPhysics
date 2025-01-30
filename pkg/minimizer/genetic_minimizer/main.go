@@ -5,13 +5,9 @@ type Number interface {
 		~int8 | ~int16 | ~int32 | ~int64 |
 		~float32 | ~float64
 }
-type EvaluatedDNA[T Number] struct {
-	float64
-	*DNA[T]
-}
 type FitnessEvaluator[T Number] func(dna *DNA[T]) float64
 type CrossoverBehavior[T Number] func(dna ...*DNA[T])
-type SelectionBehavior[T Number] func(evalDna *[]EvaluatedDNA[T], selectionCount int) []int
+type SelectionBehavior[T Number] func(evalDna []*DNA[T], selectionCount int) []int
 
 type Environment[T Number] struct {
 	MutationRate       float64

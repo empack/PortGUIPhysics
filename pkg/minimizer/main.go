@@ -24,10 +24,10 @@ type AsyncMinimiserProblem[T Number] struct {
 	fixed         []bool
 	minima        []T
 	maxima        []T
-	errorFunction func(parameter []T) T
+	errorFunction func(parameter []T) float64
 }
 
-func NewProblem[T Number](x0, minima, maxima []T, errorFunction func(parameter []T) T, config *MinimiserConfig) *AsyncMinimiserProblem[T] {
+func NewProblem[T Number](x0, minima, maxima []T, errorFunction func(parameter []T) float64, config *MinimiserConfig) *AsyncMinimiserProblem[T] {
 	return &AsyncMinimiserProblem[T]{
 		lock:          sync.RWMutex{},
 		config:        config,
@@ -101,7 +101,7 @@ var (
 			PrecursorCount:     5,
 			ParentCount:        2,
 			FitnessEvaluator:   nil,
-			CrossoverBehavior:  nil,
+			CrossoverBehavior:  TwoParentSinglePointCrossover[float64],
 			ParentSelection:    FitnessWeightedRandom[float64],
 			WildcardSelection:  RandomBottomRated[float64],
 			PrecursorSelection: TopRated[float64],
