@@ -2,7 +2,6 @@ package minimizer
 
 import (
 	"cmp"
-	"math"
 	"math/rand/v2"
 	"physicsGUI/pkg/minimizer/genetic_minimizer"
 	"slices"
@@ -13,11 +12,10 @@ import (
 
 func FitnessWeightedRandom[T Number](evalDna []*genetic_minimizer.DNA[T], selectionCount int) []int {
 	rate := float64(len(evalDna))
-	sectionRange := math.MaxFloat64 / float64(len(evalDna))
 	res := make([]int, selectionCount)
 	index := 0
 	for index < len(res) {
-		val := math.Mod(rand.ExpFloat64()/rate, sectionRange)
+		val := (rand.ExpFloat64() / rate) * float64(len(evalDna))
 		if !slices.Contains(res, int(val)) {
 			res[index] = int(val)
 			index++
@@ -49,6 +47,7 @@ func RandomBottomRated[T Number](evalDna []*genetic_minimizer.DNA[T], selectionC
 		candidate := rand.IntN(len(evalDna)/2) + (len(evalDna) / 2)
 		if !slices.Contains(res, candidate) {
 			res[index] = candidate
+			index++
 		}
 	}
 	return res
@@ -90,7 +89,14 @@ func ThreeParentCrossover[T Number](dna ...*genetic_minimizer.DNA[T]) {
 
 // random helper // TODO
 func randomTBetween[T Number](min T, max T) T {
-	return T(rand.Float64()*(float64(max-min)) + float64(min))
+	switch any(min).(type) {
+	case float64:
+		return T(rand.Float64()*(float64(max-min)) + float64(min))
+	case int32:
+		return T(rand.Int32N(int32(max-min)) + int32(min))
+	default:
+		return min
+	}
 }
 
 // helper functions for setup
@@ -129,9 +135,11 @@ func (g *GeneticMinimizer[T]) Minimize(problem *AsyncMinimiserProblem[T]) {
 	maxGenerationCount := problem.config.LoopCount
 	problem.lock.RUnlock()
 
+	wg := &sync.WaitGroup{}
+
 	for i := 0; i < maxGenerationCount; i++ {
 		// calculate fitness of generation
-		wg := &sync.WaitGroup{}
+
 		wg.Add(len(generation))
 		for gen := 0; gen < len(generation); gen++ {
 			go func(i int) {
@@ -139,10 +147,11 @@ func (g *GeneticMinimizer[T]) Minimize(problem *AsyncMinimiserProblem[T]) {
 				wg.Done()
 			}(gen)
 		}
+		wg.Wait()
 
 		// sort based on fitness
 		slices.SortFunc(generation, func(a, b *genetic_minimizer.DNA[T]) int {
-			return cmp.Compare(a.Fitness, b.Fitness)
+			return cmp.Compare(b.Fitness, a.Fitness)
 		})
 
 		// fill new generation with selections
@@ -157,7 +166,8 @@ func (g *GeneticMinimizer[T]) Minimize(problem *AsyncMinimiserProblem[T]) {
 		for c := 0; c < len(precourserChoice); c++ {
 			newGeneration[len(wildcardChoice)+c] = generation[precourserChoice[c]].Clone()
 		}
-		for c := g.environment.WildcardCount + g.environment.PrecursorCount; c < g.environment.PopulationSize; c += g.environment.ParentCount {
+		for c := g.environment.WildcardCount + g.environment.PrecursorCount; c < g.environment.PopulationSize-1; c += g.environment.ParentCount {
+			//TODO catch not matching sizes
 			parents := g.environment.ParentSelection(generation, g.environment.ParentCount)
 			parentAdr := make([]*genetic_minimizer.DNA[T], len(parents))
 			for p := 0; p < len(parents); p++ {
@@ -166,9 +176,14 @@ func (g *GeneticMinimizer[T]) Minimize(problem *AsyncMinimiserProblem[T]) {
 			}
 			g.environment.CrossoverBehavior(parentAdr...)
 		}
+		// copy last best in new generation
+		newGeneration[len(newGeneration)-1] = generation[0].Clone()
+		if generation[0].Fitness < dna0.Fitness {
+			println("Stupid Algorithems")
+		}
 
 		// apply mutations
-		for c := 0; c < len(newGeneration); c++ {
+		for c := 0; c < len(newGeneration)-1; c++ {
 			newGeneration[c].Mutate(g.environment.MutationRate, g.environment.MutationAmplifier)
 		}
 
@@ -180,8 +195,8 @@ func (g *GeneticMinimizer[T]) Minimize(problem *AsyncMinimiserProblem[T]) {
 
 		// set new generation
 		generation = newGeneration
+		if i%100 == 0 {
+			println("Completed generation ", i, " fitness: ", generation[0].Fitness)
+		}
 	}
-
-	//TODO
-	panic("implement me")
 }

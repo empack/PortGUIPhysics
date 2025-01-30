@@ -73,7 +73,7 @@ func (h *hillClimbingMinimizer[T]) Minimize(problem *AsyncMinimiserProblem[T]) {
 	bestEval := problem.errorFunction(bestNode)
 	for shouldLoop() {
 		// calculate errors of neighbors
-		neighborErrors := make([]T, 2*parameterCount)
+		neighborErrors := make([]float64, 2*parameterCount)
 		wg.Add(2 * parameterCount)
 		for i := 0; i < parameterCount; i++ {
 			go func(id int) {
