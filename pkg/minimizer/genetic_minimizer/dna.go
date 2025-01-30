@@ -31,10 +31,19 @@ func NewDNA[T Number](gens []T, fixed []bool) *DNA[T] {
 		}
 	}
 	return &DNA[T]{
-		fitness:            math.NaN(),
+		Fitness:            math.NaN(),
 		modifiableSequence: modifiableSequence,
 		completedTemplate:  completedTemplate,
 		fixedMap:           fixedMap,
+	}
+}
+
+func (d *DNA[T]) Clone() *DNA[T] {
+	return &DNA[T]{
+		Fitness:            d.Fitness,
+		modifiableSequence: d.modifiableSequence,
+		completedTemplate:  d.completedTemplate,
+		fixedMap:           d.fixedMap,
 	}
 }
 
