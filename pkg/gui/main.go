@@ -246,7 +246,7 @@ func createMinimizerProblem() *minimizer.AsyncMinimiserProblem[float64] {
 	}
 
 	return minimizer.NewProblem(parameters, minimas, maximas, errorFunction, &minimizer.MinimiserConfig{
-		LoopCount:     1e4,
+		LoopCount:     5e2,
 		ParallelReads: true,
 	})
 }
