@@ -84,13 +84,28 @@ func TwoParentTwoPointCrossover[T Number](dna ...*genetic_minimizer.DNA[T]) {
 }
 
 func ThreeParentCrossover[T Number](dna ...*genetic_minimizer.DNA[T]) {
+	// TODO
+	panic("implement me")
+}
 
+// random helper // TODO
+func randomTBetween[T Number](min T, max T) T {
+	return T(rand.Float64()*(float64(max-min)) + float64(min))
 }
 
 // helper functions for setup
-func spreadOverGlobe[T Number](fillCount int, min []T, min []T) []*genetic_minimizer.DNA[T] {
-	// TODO
-	panic("implement me")
+func spreadOverGlobe[T Number](fillCount int, min []T, max []T, fixed []bool) []*genetic_minimizer.DNA[T] {
+	dnas := make([]*genetic_minimizer.DNA[T], fillCount)
+
+	for i := 0; i < fillCount; i++ {
+		params := make([]T, len(fixed))
+		for p := 0; p < len(params); p++ {
+			params[p] = randomTBetween(min[p], max[p])
+		}
+		dnas[i] = genetic_minimizer.NewDNA(params, fixed)
+	}
+
+	return dnas
 }
 
 type GeneticMinimizer[T Number] struct {
@@ -106,7 +121,7 @@ func (g *GeneticMinimizer[T]) Minimize(problem *AsyncMinimiserProblem[T]) {
 	// create DNA from current solution
 	dna0 := genetic_minimizer.NewDNA(problem.parameter, problem.fixed)
 	// create random spread over min max space
-	initialSeed := spreadOverGlobe(g.environment.PopulationSize-1, problem.minima, problem.maxima)
+	initialSeed := spreadOverGlobe(g.environment.PopulationSize-1, problem.minima, problem.maxima, problem.fixed)
 	// setup first generation
 	generation := append(initialSeed, dna0)
 
@@ -130,13 +145,41 @@ func (g *GeneticMinimizer[T]) Minimize(problem *AsyncMinimiserProblem[T]) {
 			return cmp.Compare(a.Fitness, b.Fitness)
 		})
 
-		//
-		windCardSelections := g.environment.WildcardSelection(generation, g.environment.WildcardCount)
+		// fill new generation with selections
+		newGeneration := make([]*genetic_minimizer.DNA[T], len(generation))
 
+		wildcardChoice := g.environment.WildcardSelection(generation, g.environment.WildcardCount)
+		precourserChoice := g.environment.PrecursorSelection(generation, g.environment.PrecursorCount)
+		// TODO paralleisieren in go routinen
+		for c := 0; c < len(wildcardChoice); c++ {
+			newGeneration[c] = generation[wildcardChoice[c]].Clone()
+		}
+		for c := 0; c < len(precourserChoice); c++ {
+			newGeneration[len(wildcardChoice)+c] = generation[precourserChoice[c]].Clone()
+		}
+		for c := g.environment.WildcardCount + g.environment.PrecursorCount; c < g.environment.PopulationSize; c += g.environment.ParentCount {
+			parents := g.environment.ParentSelection(generation, g.environment.ParentCount)
+			parentAdr := make([]*genetic_minimizer.DNA[T], len(parents))
+			for p := 0; p < len(parents); p++ {
+				newGeneration[c+p] = generation[parents[p]].Clone()
+				parentAdr[p] = newGeneration[c+p]
+			}
+			g.environment.CrossoverBehavior(parentAdr...)
+		}
+
+		// apply mutations
+		for c := 0; c < len(newGeneration); c++ {
+			newGeneration[c].Mutate(g.environment.MutationRate, g.environment.MutationAmplifier)
+		}
+
+		// update problem
 		problem.lock.Lock()
 		problem.config.LoopCount -= 1
-		problem.parameter = 2
+		problem.parameter = generation[0].GetCompletedSequence()
 		problem.lock.Unlock()
+
+		// set new generation
+		generation = newGeneration
 	}
 
 	//TODO
