@@ -55,8 +55,8 @@ func (p *parallelLinearLocalSearch[T]) plsWorker(id int, wg *sync.WaitGroup, pro
 			problem.lock.RUnlock()
 		}
 		var parameter T
-		var errP T
-		var errM T
+		var errP float64
+		var errM float64
 		guessP := slices.Clone(parameters)
 		guessP[id] = min(guessP[id]+minDelta, maxv)
 		guessM := slices.Clone(parameters)

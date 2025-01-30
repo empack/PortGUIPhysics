@@ -101,7 +101,7 @@ func createMinimizeButton() *widget.Button {
 			go minimizeRefreshWorker(problem, closeChan, clock)
 
 			go func() {
-				minimizer.FloatMinimizerStagedHC.Minimize(problem)
+				minimizer.FloatMinimizerGen.Minimize(problem)
 				closeChan <- struct{}{}
 				dialog.ShowInformation("Minimizer", "Minimisation completed",
 					MainWindow)
@@ -184,22 +184,22 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 	if err != nil {
 		return "(GENERAL) DELTAQ MISS", nil
 	}
-	deltaMinima := -math.MaxFloat64
-	deltaMaxima := math.MaxFloat64
+	deltaMinima := -1.0
+	deltaMaxima := 1.0
 
 	background, err := param.GetFloat("general", "background")
 	if err != nil {
 		return "(GENERAL) BACKGROUND MISS", nil
 	}
 	backgroundMinima := 0.0
-	backgroundMaxima := math.MaxFloat64
+	backgroundMaxima := 10.0
 
 	scaling, err := param.GetFloat("general", "scaling")
 	if err != nil {
 		return "(GENERAL) SCALING MISS", nil
 	}
 	scalingMinima := 0.0
-	scalingMaxima := math.MaxFloat64
+	scalingMaxima := 10.0
 
 	parameters := slices.Concat(eden, d, sigma)
 	parameters = append(parameters, delta, background, scaling)
@@ -250,7 +250,7 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 	}
 
 	return "", minimizer.NewProblem(parameters, minimas, maximas, penaltyFunction, &minimizer.MinimiserConfig{
-		LoopCount:     1e6,
+		LoopCount:     1e4,
 		ParallelReads: true,
 	})
 }
