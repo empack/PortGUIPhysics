@@ -111,3 +111,16 @@ func (g GroupElements[T]) GetMaxima() ([]T, error) {
 
 	return values, nil
 }
+
+// returns the checkbox value of all in the group
+func (g GroupElements[T]) GetChecked() []bool {
+	values := make([]bool, len(g.params))
+
+	for i, param := range g.params {
+		v := param.IsChecked()
+
+		values[i] = v
+	}
+
+	return values
+}

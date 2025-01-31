@@ -152,6 +152,7 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 	if err != nil {
 		return "EDEN MAXIMA MISS", nil
 	}
+	edenChecks, _ := param.GetFloatChecked("eden")
 
 	d, err := param.GetFloats("thick")
 	if err != nil {
@@ -165,6 +166,7 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 	if err != nil {
 		return "THICK MAXIMA MISS", nil
 	}
+	dChecks, _ := param.GetFloatChecked("thick")
 
 	sigma, err := param.GetFloats("rough")
 	if err != nil {
@@ -178,6 +180,7 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 	if err != nil {
 		return "ROUGH MAXIMA MISS", nil
 	}
+	sigmaChecks, _ := param.GetFloatChecked("rough")
 
 	// get general parameters
 	delta, err := param.GetFloat("general", "deltaq")
@@ -186,6 +189,7 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 	}
 	deltaMinima := -1.0
 	deltaMaxima := 1.0
+	deltaCheck, _ := param.GetFloatCheck("general", "deltaq")
 
 	background, err := param.GetFloat("general", "background")
 	if err != nil {
@@ -193,6 +197,7 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 	}
 	backgroundMinima := 0.0
 	backgroundMaxima := 10.0
+	backgroundCheck, _ := param.GetFloatCheck("general", "background")
 
 	scaling, err := param.GetFloat("general", "scaling")
 	if err != nil {
@@ -200,6 +205,7 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 	}
 	scalingMinima := 0.0
 	scalingMaxima := 10.0
+	scalingCheck, _ := param.GetFloatCheck("general", "scaling")
 
 	parameters := slices.Concat(eden, d, sigma)
 	parameters = append(parameters, delta, background, scaling)
@@ -207,6 +213,8 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 	minimas = append(minimas, deltaMinima, backgroundMinima, scalingMinima)
 	maximas := slices.Concat(edenMaxima, dMaxima, sigmaMaxima)
 	maximas = append(maximas, deltaMaxima, backgroundMaxima, scalingMaxima)
+	fixed := slices.Concat(edenChecks, dChecks, sigmaChecks)
+	fixed = append(fixed, deltaCheck, backgroundCheck, scalingCheck)
 
 	dataTracks := graphMap["intensity"].GetDataTracks()
 	if len(dataTracks) == 0 {
@@ -249,8 +257,8 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 		return diff
 	}
 
-	return "", minimizer.NewProblem(parameters, minimas, maximas, penaltyFunction, &minimizer.MinimiserConfig{
-		LoopCount:     1e4,
+	return "", minimizer.NewProblem(parameters, minimas, maximas, fixed, penaltyFunction, &minimizer.MinimiserConfig{
+		LoopCount:     5e2,
 		ParallelReads: true,
 	})
 }
@@ -351,7 +359,7 @@ func mainWindow() {
 				createMinimizeButton(),
 			),
 			helper.CreateSeparator(),
-		),   // top
+		), // top
 		nil, // bottom
 		nil, // left
 		nil, // right

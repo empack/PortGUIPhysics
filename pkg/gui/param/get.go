@@ -72,6 +72,28 @@ func GetFloat(group, label string) (float64, error) {
 	return 0, ErrParameterNotFound
 }
 
+// Get checkbox value
+func GetFloatCheck(group string, label string) (bool, error) {
+	if fParams[group] == nil {
+		return false, ErrParameterNotFound
+	}
+
+	if p := fParams[group].GetParam(label); p != nil {
+		return p.IsChecked(), nil
+	}
+
+	return false, ErrParameterNotFound
+}
+
+// Get all checkbox values based on group
+func GetFloatChecked(group string) ([]bool, error) {
+	if fParams[group] == nil {
+		return nil, ErrParameterNotFound
+	}
+
+	return fParams[group].GetChecked(), nil
+}
+
 // Get all float minima based on group
 func GetFloatMinima(group string) ([]float64, error) {
 	if fParams[group] == nil {
@@ -119,4 +141,26 @@ func GetInts(group string) ([]int, error) {
 	}
 
 	return iParams[group].GetValues()
+}
+
+// Get checkbox value
+func GetIntCheck(group string, label string) (bool, error) {
+	if iParams[group] == nil {
+		return false, ErrParameterNotFound
+	}
+
+	if p := iParams[group].GetParam(label); p != nil {
+		return p.IsChecked(), nil
+	}
+
+	return false, ErrParameterNotFound
+}
+
+// Get all checkbox values based on group
+func GetIntChecked(group string) ([]bool, error) {
+	if iParams[group] == nil {
+		return nil, ErrParameterNotFound
+	}
+
+	return iParams[group].GetChecked(), nil
 }

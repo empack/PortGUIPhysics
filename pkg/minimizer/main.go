@@ -27,12 +27,12 @@ type AsyncMinimiserProblem[T Number] struct {
 	errorFunction func(parameter []T) float64
 }
 
-func NewProblem[T Number](x0, minima, maxima []T, errorFunction func(parameter []T) float64, config *MinimiserConfig) *AsyncMinimiserProblem[T] {
+func NewProblem[T Number](x0, minima, maxima []T, fixed []bool, errorFunction func(parameter []T) float64, config *MinimiserConfig) *AsyncMinimiserProblem[T] {
 	return &AsyncMinimiserProblem[T]{
 		lock:          sync.RWMutex{},
 		config:        config,
 		parameter:     x0,
-		fixed:         make([]bool, len(x0)),
+		fixed:         fixed,
 		minima:        minima,
 		maxima:        maxima,
 		errorFunction: errorFunction,
@@ -95,7 +95,7 @@ var (
 	FloatMinimizerGen Minimizer[float64] = &GeneticMinimizer[float64]{
 		environment: genetic_minimizer.Environment[float64]{
 			MutationRate:       0.01,
-			MutationAmplifier:  1e-4,
+			MutationAmplifier:  1e-1,
 			PopulationSize:     100,
 			WildcardCount:      5,
 			PrecursorCount:     5,
