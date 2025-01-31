@@ -252,7 +252,7 @@ func createMinimizerProblem() (string, *minimizer.AsyncMinimiserProblem[float64]
 			if err != nil {
 				fmt.Println("Error while calculating intensity:", err)
 			}
-			diff += math.Pow(dataModel[i].Y-iy, 2)
+			diff += math.Abs(dataModel[i].Y - iy)
 		}
 		return diff
 	}

@@ -50,7 +50,7 @@ func (d *DNA[T]) Clone() *DNA[T] {
 func (dna *DNA[T]) Mutate(rate, amplifier float64) {
 	for i := range dna.modifiableSequence {
 		if rand.Float64() > rate {
-			dna.modifiableSequence[i] += T(rand.Float64() * amplifier)
+			dna.modifiableSequence[i] += T((rand.Float64()*2 - 1) * amplifier)
 		}
 	}
 }

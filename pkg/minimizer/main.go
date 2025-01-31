@@ -94,11 +94,11 @@ var (
 var (
 	FloatMinimizerGen Minimizer[float64] = &GeneticMinimizer[float64]{
 		environment: genetic_minimizer.Environment[float64]{
-			MutationRate:       0.01,
-			MutationAmplifier:  1e-1,
-			PopulationSize:     100,
-			WildcardCount:      5,
-			PrecursorCount:     5,
+			MutationRate:       0.05,
+			MutationAmplifier:  1e-3,
+			PopulationSize:     200,
+			WildcardCount:      8,
+			PrecursorCount:     8,
 			ParentCount:        2,
 			FitnessEvaluator:   nil,
 			CrossoverBehavior:  TwoParentTwoPointCrossover[float64],
