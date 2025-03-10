@@ -26,7 +26,6 @@ import (
 	minuit "github.com/empack/minuit2go/pkg"
 )
 
-// do not touch
 var (
 	// App reference
 	App        fyne.App
@@ -40,7 +39,7 @@ var (
 // Start GUI (function is blocking)
 func Start() {
 	App = app.NewWithID("GUI-Physics")
-	App.Settings().SetTheme(theme.DarkTheme()) //TODO WIP to fix invisible while parameter lables
+	App.Settings().SetTheme(theme.DarkTheme())
 	MainWindow = App.NewWindow("Physics GUI")
 
 	mainWindow()
@@ -125,7 +124,7 @@ func createFileMenu() *fyne.Menu {
 
 // adaption should not be necessary here
 // fit parameters to the experimental data passing everything to minuit
-func minimize(experimentalData []*function.Function, parameters ...*param.Parameter[float64]) error {
+func minimize(experimentalData []function.Functions, parameters ...*param.Parameter[float64]) error {
 	mnParams := minuit.NewEmptyMnUserParameters()
 
 	var freeToChangeCnt int = 0
@@ -273,7 +272,9 @@ func (this *MinimizerControlPanel) minimizerProblemSetup() error {
 	background := general.GetParam("background")
 	scaling := general.GetParam("scaling")
 
-	experimentalData := graphMap["intensity"].GetDataTracks()
+	experimentalData := []function.Functions{
+		graphMap["intensity"].GetDataTracks(),
+	}
 
 	if err := this.minimize(experimentalData, e1, e2, e3, e4, t1, t2, r1, r2, r3, delta, background, scaling); err != nil {
 		fmt.Println("Error while minimizing:", err)
@@ -315,24 +316,13 @@ func penaltyFunction(fcn *minimizer.MinuitFunction, params []float64) float64 {
 		Scaling:    scalingErr,
 	})
 	dataPoints := make([]function.Points, len(fcn.ExperimentalData))
-	for i, expData := range fcn.ExperimentalData {
-		dataPoints[i] = expData.GetData()
+	for _, funcInGraph := range fcn.ExperimentalData {
+		for i, expData := range funcInGraph {
+			dataPoints[i] = expData.GetData()
+		}
 	}
 
-	/* //real penalty calculation
-	diff := 0.0
-	for _, expData := range fcn.ExperimentalData {
-		data := expData.GetData()
-		for i := range data {
-			y_i, err := function.GetY(intensityPoints, data[i].X)
-			if err != nil {
-				fmt.Println("Error while calculating intensity:", err)
-			}
-			//metric, maybe you like to exchange it to other ones
-			diff += math.Pow((data[i].Y-y_i)*math.Pow(data[i].X*100, 4), 2)
-		}
-	} */
-
+	//real penalty calculation
 	diff, err := physics.Sim2SigRMS(dataPoints, intensityPoints)
 	if err != nil {
 		dialog.ShowError(err, MainWindow)

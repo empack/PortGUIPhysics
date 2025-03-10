@@ -2,12 +2,6 @@ package gui
 
 import (
 	"fmt"
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/theme"
-	"fyne.io/fyne/v2/widget"
-	minuit "github.com/empack/minuit2go/pkg"
 	"math"
 	"physicsGUI/pkg/function"
 	"physicsGUI/pkg/gui/helper"
@@ -15,6 +9,13 @@ import (
 	"physicsGUI/pkg/minimizer"
 	"sync"
 	"time"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
+	minuit "github.com/empack/minuit2go/pkg"
 )
 
 type MinimizerState int
@@ -300,7 +301,7 @@ func (this *MinimizerControlPanel) Failed(err error) {
 	this.lblStatus.SetText("Failed")
 }
 
-func (this *MinimizerControlPanel) minimize(experimentalData []*function.Function, parameters ...*param.Parameter[float64]) error {
+func (this *MinimizerControlPanel) minimize(experimentalData []function.Functions, parameters ...*param.Parameter[float64]) error {
 	mnParams := minuit.NewEmptyMnUserParameters()
 
 	var freeToChangeCnt int = 0
