@@ -12,36 +12,70 @@ SPIRIT is a tool for analyzing X-ray and neutron reflectivity data to determine 
 
 ## Installation
 
-### Prerequisites
+### Prerequisites (Must Install)
 
 - [Go](https://go.dev/doc/install) (version >= 1.23.3)
+- [GCC](https://docs.fyne.io/started/) (Follow the instructions in their "Prerequisites")
+- [Git](https://git-scm.com/downloads/win) (Windows usually doesn't have this pre-installed, follow default install wizard options)
 
 ### Recommended Tools
 
 - Install [Visual Studio Code](https://code.visualstudio.com)
-When you open the project folder it will ask you if it should install a go extension. Let it do that.
+  When you open the project folder it will ask you if it should install a go extension. Let it do that.
 
 - Install the Golang language extension from the Extension pack
 
 ![extension tab](.github/ext.png)
 
-- Install [GCC] (https://docs.fyne.io/started/)
-Therefore follow the instructions before the "Downloading" section.
+### Clone or Download Repository
 
-On Windows systems also...
-- Install [Git](https://git-scm.com/downloads/win)
-Use the preselected options of the installation wizard
+#### Option 1: **Clone the Repository**
 
-### Building and Running
+Open a terminal and run the following command to clone the repository:
+
+```bash
+git clone https://github.com/empack/PortGUIPhysics/.git
+```
+
+This will create a local copy of the repository on your machine.
+
+#### Option 2: **Download the Repository**
+
+If you prefer to download the repository as a ZIP file, follow these steps:
+
+- Go to the repository page on GitHub: [BP-PortGUIPhysics Repository](https://github.com/empack/PortGUIPhysics/)
+- Click the "Code" button
+- Select "Download ZIP"
+- Extract the downloaded ZIP file to your desired location
+
+#### **Navigate to the Project Directory**
+
+After cloning or downloading the repository, navigate to the project directory:
+
+```bash
+cd /path/to/repo/BP-PortGUIPhysics
+```
+
+#### **Install Go Dependencies**
+
+Make sure you have all the prerequisites installed as mentioned in the [Installation](#installation) section. Then, install any additional dependencies required by the project using:
+
+```bash
+go mod tidy
+```
+
+# Building and Running
 
 There are two ways to run SPIRIT:
 
 #### Development Mode
+
 ```bash
 go run main.go
 ```
 
 #### Compiled Binary
+
 ```bash
 # Build the application
 go build -o spirit
@@ -72,8 +106,8 @@ The SPIRIT interface consists of several main components:
 1. Experimental data can be loaded by dragging and dropping data files onto the Graph area
    ![extension tab](.github/Gui_LoadDataDrop.png)
 
-
 Supported data format is a space/tab-delimited text file with three columns:
+
 - Q-value (momentum transfer)
 - Reflectivity
 - Error
@@ -90,6 +124,7 @@ Parameters are organized into functional groups, for example:
 - **General**: Controls overall parameters like background, scaling, and q-offset
 
 Each parameter can be:
+
 - Manually adjusted by typing values
 - Set with minimum/maximum bounds for fitting
 - Included/excluded from fitting using checkboxes
@@ -110,7 +145,7 @@ You can save your current parameter settings and load them later:
 
 - **Save**: File > Save
   - For JSON-Format use ".json" file extension
-  - For XML-Format use ".xml" file extension 
+  - For XML-Format use ".xml" file extension
   - All not supported extensions will be saved in the GOB-Format
 - **Load**: File > Load
   - When loading JSON-Format make sure the files uses ".json" file extension
@@ -213,7 +248,8 @@ The penalty function determines how the difference between model and data is cal
 ```
 
 ### Changing the Minimization Algorithm
-SPIRIT makes use of the `Minuit2Go` [package](https://github.com/empack/minuit2go) for minimization, 
+
+SPIRIT makes use of the `Minuit2Go` [package](https://github.com/empack/minuit2go) for minimization,
 which uses the Minuit2 algorithm by default, but you can use other algorithms:
 
 1. Open `pkg/gui/main.go`
@@ -224,7 +260,7 @@ For small changes, you might modify parameters of the existing algorithm:
 
 ```go
 // Update the strategy (more precise but slower)
-migrad2 := minuit.NewMnMigradWithParameterStateStrategy(mFunc, min.UserState(), 
+migrad2 := minuit.NewMnMigradWithParameterStateStrategy(mFunc, min.UserState(),
     minuit.NewMnStrategyWithStra(minuit.PreciseStrategy))
 ```
 
@@ -297,3 +333,6 @@ When fitting is requested:
 5. Graphs are refreshed to show the new fit
 
 ---
+
+> [!TIP]
+> We encourage getting familiar with the use of `Git` in order to keep code sharing and modification tidy with time.
